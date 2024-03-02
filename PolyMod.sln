@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PolyMod", "PolyMod.csproj", "{58B09361-FD7A-48F1-82E1-E2359ADA512F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		IL2CPP|Any CPU = IL2CPP|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{58B09361-FD7A-48F1-82E1-E2359ADA512F}.IL2CPP|Any CPU.ActiveCfg = IL2CPP|Any CPU
+		{58B09361-FD7A-48F1-82E1-E2359ADA512F}.IL2CPP|Any CPU.Build.0 = IL2CPP|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {85E2543B-5FCB-481F-AA67-C05EB7CF843F}
+	EndGlobalSection
+EndGlobal
