@@ -22,4 +22,4 @@ Download BepInEx from [BepInEx Bleeding Edge builds](https://builds.bepinex.dev/
 
 ### PolyMod
 
-Download PolyMod from [github releases](https://github.com/IExploitableMan/PolyMod/releases) and place it under `BepInEx/plugins`
+Download PolyMod from [github releases](https://github.com/PolyModTeam/PolyMod/releases) and place it under `BepInEx/plugins`
