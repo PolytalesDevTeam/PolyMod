@@ -182,30 +182,6 @@ namespace PolyMod
 			__result = sprites.ToArray();
 		}
 
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(SettingsScreen), nameof(SettingsScreen.CreateLanguageList))]
-		private static bool SettingsScreen_CreateLanguageList(SettingsScreen __instance, UnityEngine.Transform parent)
-		{
-			List<string> list = new() { "Automatic", "English", "Français", "Deutsch", "Italiano", "Português", "Русский", "Español", "日本語", "한국어" };
-			List<int> list2 = new() { 1, 3, 7, 9, 6, 4, 5, 8, 11, 12 };
-			if (GameManager.GetPurchaseManager().IsTribeUnlocked(Polytopia.Data.TribeData.Type.Elyrion))
-			{
-				list.Add("∑∫ỹriȱŋ");
-				list2.Add(10);
-			}
-			list.Add("Custom...");
-			list2.Add(2);
-			__instance.languageSelector = UnityEngine.Object.Instantiate(__instance.horizontalListPrefab, parent ?? __instance.container);
-			__instance.languageSelector.UpdateScrollerOnHighlight = true;
-			__instance.languageSelector.HeaderKey = "settings.language";
-			__instance.languageSelector.SetIds(list2.ToArray());
-			__instance.languageSelector.SetData(list.ToArray(), 0, false);
-			__instance.languageSelector.SelectId(SettingsUtils.Language, true, -1f);
-			__instance.languageSelector.IndexSelectedCallback = new Action<int>(__instance.LanguageChangedCallback);
-			__instance.totalHeight += __instance.languageSelector.rectTransform.sizeDelta.y;
-
-			return false;
-		}
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
@@ -226,17 +202,12 @@ namespace PolyMod
 			__result = presets.ToArray();
 		}
 
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.OnMapPresetChanged))]
-		private static bool GameSetupScreen_OnMapPresetChanged(GameSetupScreen __instance, int index)
+		private static void GameSetupScreen_OnMapPresetChanged(GameSetupScreen __instance, int index)
 		{
 			MapLoader.map = null;
-			bool isMatchMaking = GameManager.PreliminaryGameSettings.GameType == GameType.Matchmaking;
-			MapPreset[] array = isMatchMaking ? GameSetupScreen.MapPresetDataSource.dataMatchMaking : GameSetupScreen.MapPresetDataSource.data;
-
-			var list = array.ToList();
-			list.Add((MapPreset)500);
-			array = list.ToArray();
+			MapPreset[] array = GameSetupScreen.MapPresetDataSource.GetData(GameManager.PreliminaryGameSettings.GameType == GameType.Matchmaking);
 
 			if (MapLoader.isListInstantiated)
 			{
@@ -244,48 +215,30 @@ namespace PolyMod
 				MapLoader.isListInstantiated = false;
 			}
 
-			if (index >= 0 && index < array.Length)
+			if ((int)array[index] == 500)
 			{
-
-				if ((int)array[index] == 500)
+				string[] maps = Directory.GetFiles(Plugin.MAPS_PATH, "*.json");
+				if (maps.Length != 0)
 				{
-					DirectoryInfo directory = new DirectoryInfo(Plugin.MAPS_PATH);
-					FileInfo[] files = directory.GetFiles("*.json");
-					if (files.Length != 0)
-					{
-						MapPreset mapPresetFromIndex = array[index];
-						GameManager.PreliminaryGameSettings.mapPreset = mapPresetFromIndex;
-
-						string[] items = files.Select(file => file.Name).ToArray();
-
-						MapLoader.customMapsList = __instance.CreateHorizontalList("gamesettings.custommaps", items, new Action<int>(MapLoader.OnCustomMapChanged), 0, null, 500);
-						MapLoader.isListInstantiated = true;
-					}
-					else
-					{
-						MapPreset mapPresetFromIndex = array[0];
-						GameManager.PreliminaryGameSettings.mapPreset = 0;
-						NotificationManager.Notify(Localization.Get("gamesettings.nocustommapsfound"), Localization.Get("gamesettings.notavailable"), null, null);
-						Console.Write("No maps found");
-					}
+					GameManager.PreliminaryGameSettings.mapPreset = array[index];
+					MapLoader.customMapsList = __instance.CreateHorizontalList("Maps", maps.Select(map => Path.GetFileNameWithoutExtension(map)).ToArray(), new Action<int>(MapLoader.OnCustomMapChanged), 0, null, 500);
+					MapLoader.isListInstantiated = true;
 				}
-			}
-			else
-			{
-				MapPreset mapPresetFromIndex = MapPreset.None;
-				GameManager.PreliminaryGameSettings.mapPreset = mapPresetFromIndex;
+				else
+				{
+					GameManager.PreliminaryGameSettings.mapPreset = MapPreset.None;
+					NotificationManager.Notify(Localization.Get("No maps found"), Localization.Get("gamesettings.notavailable"), null, null);
+				}
 			}
 
 			__instance.UpdateOpponentList();
 			GameManager.PreliminaryGameSettings.SaveToDisk();
 			__instance.RefreshInfo();
-
-			return false;
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.OnStartGameClicked))]
-		private static void GameSetupScreen_OnStartGameClicked(int id, BaseEventData eventData)
+		private static void GameSetupScreen_OnStartGameClicked()
 		{
 			MapLoader.isListInstantiated = false;
 		}
@@ -296,7 +249,7 @@ namespace PolyMod
 		{
 			if (mapPreset == (MapPreset)500)
 			{
-				__result = "gamesettings.map.custom";
+				__result = "Custom";
 			}
 		}
 
