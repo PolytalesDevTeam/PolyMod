@@ -1,7 +1,6 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 namespace PolyMod
 {
@@ -25,12 +24,12 @@ namespace PolyMod
 		public override void Load()
 		{
 			Harmony.CreateAndPatchAll(typeof(Patcher));
-		}
+
+        }
 
 		internal static void Start()
 		{
 			Directory.CreateDirectory(MAPS_PATH);
-			DeveloperConsole.Init();
 		}
 
 		internal static void Update()
@@ -39,11 +38,6 @@ namespace PolyMod
 			{
 				Start();
 				start = true;
-			}
-
-			if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab))
-			{
-				DeveloperConsole.Toggle();
 			}
 		}
 
