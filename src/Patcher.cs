@@ -1,8 +1,10 @@
-﻿using HarmonyLib;
+﻿using Cpp2IL.Core.OutputFormats;
+using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
 using PolytopiaBackendBase.Game;
+using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace PolyMod
@@ -58,16 +60,7 @@ namespace PolyMod
 			int num = width * (int)(map.Height - 1);
 			for (int i = 0; i < map.Tiles.Length; i++)
 			{
-				TileData.ShorelineFlag shorelineFlag = TileData.ShorelineFlag.None;
-				if (map.Tiles[i].terrain == Polytopia.Data.TerrainData.Type.Water)
-				{
-					int num2 = i % width;
-					shorelineFlag |= ((i > width && MapDataExtensions.IsNonFrozenWater(map.Tiles[i - width])) ? TileData.ShorelineFlag.None : TileData.ShorelineFlag.None);
-					shorelineFlag |= ((i < num && MapDataExtensions.IsNonFrozenWater(map.Tiles[i + width])) ? TileData.ShorelineFlag.None : TileData.ShorelineFlag.None);
-					shorelineFlag |= ((num2 > 0 && MapDataExtensions.IsNonFrozenWater(map.Tiles[i - 1])) ? TileData.ShorelineFlag.None : TileData.ShorelineFlag.None);
-					shorelineFlag |= ((num2 < width - 1 && MapDataExtensions.IsNonFrozenWater(map.Tiles[i + 1])) ? TileData.ShorelineFlag.None : TileData.ShorelineFlag.None);
-				}
-				map.Tiles[i].shoreLines = shorelineFlag;
+				map.Tiles[i].shoreLines = TileData.ShorelineFlag.None;
 			}
 			return false;
 		}
@@ -259,5 +252,86 @@ namespace PolyMod
 		{
 			MapLoader.map = null;
 		}
-	}
+
+        //do not touch TechItem patches, they prevent game from crashing when custom tribe(idfk how this works)
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
+        private static void TechItem_GetUnlockItems(TechData data, PlayerState playerState, bool onlyPickFirstItem = false)
+        {
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
+        private static void TechItem_SetupComplete()
+        {
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(BasicPopup), nameof(BasicPopup.Update))]
+        private static void BasicPopup_Update(BasicPopup __instance)
+        {
+			if (PolymodUI.isUIActive)
+			{
+                __instance.rectTransform.SetWidth(PolymodUI.width);
+                __instance.rectTransform.SetHeight(PolymodUI.height);
+            }
+        }
+
+		//shitty patch I know, should be refactored after
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
+        private static bool PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
+        {
+            int num = buttonData.Length;
+            __instance.buttons = new UITextButton[num];
+            for (int i = 0; i < num; i++)
+            {
+                UITextButton uitextButton = UnityEngine.Object.Instantiate<UITextButton>(__instance.buttonPrefab, __instance.transform);
+                
+                Vector2 vector = new Vector2((num == 1) ? 0.5f : (((float)i / ((float)num - 1.0f))), 0.5f); // literally one line i have to patch here
+                uitextButton.rectTransform.anchorMin = vector;
+                uitextButton.rectTransform.anchorMax = vector;
+                uitextButton.rectTransform.pivot = vector;
+                uitextButton.rectTransform.anchoredPosition = Vector2.zero;
+                uitextButton.Key = buttonData[i].text;
+                uitextButton.name = string.Format("PopupButton_{0}", uitextButton.text);
+                uitextButton.id = buttonData[i].id;
+                if (buttonData[i].closesPopup)
+                {
+                    uitextButton.OnClicked += __instance.hideCallback;
+                }
+                if (buttonData[i].callback != null)
+                {
+                    uitextButton.OnClicked += buttonData[i].callback;
+                }
+                if (buttonData[i].customColorStates != null)
+                {
+                    uitextButton.BgColorStates = buttonData[i].customColorStates;
+                }
+                __instance.buttons[i] = uitextButton;
+                if (buttonData[i].state == PopupBase.PopupButtonData.States.Selected)
+                {
+                    __instance.startSelection = i;
+                }
+                else if (buttonData[i].state == PopupBase.PopupButtonData.States.Disabled)
+                {
+                    uitextButton.ButtonEnabled = false;
+                }
+                __instance.buttons[i].AnimationsEnabled = __instance.buttonAnimationsEnabled;
+            }
+            if (num >= 2 && buttonData[0].customColorStates == null)
+            {
+                __instance.buttons[0].LabelColorStates = new UIButtonBase.ColorStates(__instance.leftButtonLabelColors);
+                __instance.buttons[0].BgColorStates = new UIButtonBase.ColorStates(__instance.leftButtonBgColors);
+            }
+            if (__instance.startSelection >= 0)
+            {
+                PolytopiaInput.Omnicursor.AffixToUIElement(__instance.buttons[__instance.startSelection].GetComponent<RectTransform>());
+            }
+            __instance.gameObject.SetActive(true);
+
+            return false;
+        }
+    }
 }

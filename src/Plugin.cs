@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 namespace PolyMod
 {
@@ -39,7 +40,12 @@ namespace PolyMod
 				Start();
 				start = true;
 			}
-		}
+
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !PolymodUI.isUIActive)
+            {
+				PolymodUI.OnKeysPressed();
+            }
+        }
 
 		internal static string GetJTokenName(JToken token, int n = 1)
 		{
