@@ -20,6 +20,8 @@ namespace PolyMod
 
 		internal static int version = -1;
 
+		internal static ClientBase? replayClient;
+
 		internal static bool start = false;
 
 		public override void Load()

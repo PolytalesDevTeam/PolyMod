@@ -5,6 +5,42 @@ namespace PolyMod
 {
 	internal static class ReplayResumer
 	{
+		public static void BackToReplay()
+		{
+			ClientBase passAndPlayClient = GameManager.Client;
+			if (!passAndPlayClient.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
+			{
+				Log.Warning("{0} Command used outside of resumed game, name is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameName });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			if (passAndPlayClient.GameState.Settings.GameType != GameType.PassAndPlay)
+			{
+				Log.Warning("{0} Command used outside of resumed game, type is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameType.ToString() });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			if (Plugin.replayClient == null)
+			{
+				Log.Warning("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			if (Plugin.replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName.Substring(passAndPlayClient.GameState.Settings.GameName.Length - 36))
+			{
+				Log.Warning("{0} Replay client game id does not match resumed game id", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			Log.Info("{0} Loading replay {1} Game", new Il2CppSystem.Object[]
+			{
+				"<color=#FFFFFF>[GameManager]</color>",
+				Plugin.replayClient.initialGameState.Settings.BaseGameMode.ToString()
+			});
+			GameManager.instance.SetLoadingGame(true);
+			GameManager.instance.client = Plugin.replayClient;
+			GameManager.instance.LoadLevel();
+		}
 		public static void Resume()
 		{
 			ClientBase replayClient = GameManager.Client;
@@ -60,12 +96,13 @@ namespace PolyMod
 
 		public static Il2CppSystem.Threading.Tasks.Task<bool> TransformClient(ClientBase replayClient, HotseatClient hotseatClient)
 		{
+			Plugin.replayClient = replayClient;
 			GameState initialGameState = replayClient.initialGameState;
 			GameState lastTurnGameState;
 			GameState currentGameState;
 			GameState otherCurrentGameState;
 			initialGameState.Settings.GameType = GameType.PassAndPlay;
-			initialGameState.Settings.gameName = "(From move " + replayClient.GetLastSeenCommand() + ") " + initialGameState.Settings.gameName;
+			initialGameState.Settings.gameName = nameStart + replayClient.GetLastSeenCommand().ToString() + nameEnd + initialGameState.Settings.gameName + replayClient.gameId.ToString();
 			byte[] array = SerializationHelpers.ToByteArray(initialGameState, replayClient.initialGameState.Version);
 			SerializationHelpers.FromByteArray(array, out currentGameState);
 			SerializationHelpers.FromByteArray(array, out lastTurnGameState);
@@ -159,5 +196,8 @@ namespace PolyMod
 			}
 			return true;
 		}
+
+		internal static string nameStart = "(From move ";
+		internal static string nameEnd = ")";
 	}
 }

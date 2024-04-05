@@ -26,6 +26,16 @@ namespace PolyMod
         {
             if(GameManager.Instance.isLevelLoaded)
             {
+                if (GameManager.GameState.Settings.GameType == GameType.PassAndPlay && GameManager.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
+                {
+                    return new PopupBase.PopupButtonData[]
+                    {
+                        new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackButtonClicked, -1, true, null),
+                        new PopupBase.PopupButtonData("GET STARS", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnGetStarsUiButtonClicked, -1, true, null),
+                        new PopupBase.PopupButtonData("REVEAL MAP", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnMapRevealButtonClicked, -1, true, null),
+                        new PopupBase.PopupButtonData("BACK TO REPLAY", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackToReplayButtonClicked, -1, true, null),
+                    };
+                }
                 if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
                 {
                     return new PopupBase.PopupButtonData[]
@@ -75,6 +85,12 @@ namespace PolyMod
             void OnResumeButtonClicked(int buttonId, BaseEventData eventData)
             {
                 ReplayResumer.Resume();
+                isUIActive = false;
+            }
+
+            void OnBackToReplayButtonClicked(int buttonId, BaseEventData eventData)
+            {
+                ReplayResumer.BackToReplay();
                 isUIActive = false;
             }
         }
