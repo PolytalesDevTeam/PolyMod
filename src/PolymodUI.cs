@@ -35,6 +35,14 @@ namespace PolyMod
                         new PopupBase.PopupButtonData("REVEAL MAP", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnMapRevealButtonClicked, -1, true, null),
                     };
                 }
+                if (GameManager.Instance.client.IsReplay)
+                {
+                    return new PopupBase.PopupButtonData[]
+                    {
+                        new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackButtonClicked, -1, true, null),
+                        new PopupBase.PopupButtonData("RESUME", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnResumeButtonClicked, -1, true, null),
+                    };
+                }
             }
             return new PopupBase.PopupButtonData[]
             {
@@ -61,6 +69,12 @@ namespace PolyMod
             {
                 GameManager.LocalPlayer.Currency += 1000;
                 Console.Write("+1000 stars");
+                isUIActive = false;
+            }
+
+            void OnResumeButtonClicked(int buttonId, BaseEventData eventData)
+            {
+                ReplayResumer.Resume();
                 isUIActive = false;
             }
         }
