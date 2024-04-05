@@ -1,11 +1,9 @@
-﻿using Cpp2IL.Core.OutputFormats;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
 using PolytopiaBackendBase.Game;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace PolyMod
 {

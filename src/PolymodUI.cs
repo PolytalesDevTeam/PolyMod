@@ -24,30 +24,23 @@ namespace PolyMod
         }
         public static PopupButtonData[] CreatePopupButtonData()
         {
-            if(GameManager.Instance.isLevelLoaded)
+            List<PopupBase.PopupButtonData> popupButtons = new List<PopupBase.PopupButtonData>();
+            popupButtons.Add(new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnBackButtonClicked, -1, true, null));
+
+            if (GameManager.Instance.isLevelLoaded)
             {
                 if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
                 {
-                    return new PopupBase.PopupButtonData[]
-                    {
-                        new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackButtonClicked, -1, true, null),
-                        new PopupBase.PopupButtonData("GET STARS", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnGetStarsUiButtonClicked, -1, true, null),
-                        new PopupBase.PopupButtonData("REVEAL MAP", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnMapRevealButtonClicked, -1, true, null),
-                    };
+                    popupButtons.Add(new PopupBase.PopupButtonData("GET STARS", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
+                    popupButtons.Add(new PopupBase.PopupButtonData("REVEAL MAP", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapRevealButtonClicked, -1, true, null));
                 }
                 if (GameManager.Instance.client.IsReplay)
                 {
-                    return new PopupBase.PopupButtonData[]
-                    {
-                        new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackButtonClicked, -1, true, null),
-                        new PopupBase.PopupButtonData("RESUME", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnResumeButtonClicked, -1, true, null),
-                    };
+                    popupButtons.Add(new PopupBase.PopupButtonData("RESUME", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnResumeButtonClicked, -1, true, null));
                 }
             }
-            return new PopupBase.PopupButtonData[]
-            {
-                new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackButtonClicked, -1, true, null)
-            };
+
+            return popupButtons.ToArray();
 
             void OnBackButtonClicked(int buttonId, BaseEventData eventData)
             {
@@ -65,7 +58,7 @@ namespace PolyMod
                 isUIActive = false;
             }
 
-            void OnGetStarsUiButtonClicked(int buttonId, BaseEventData eventData)
+            void OnGetStarsButtonClicked(int buttonId, BaseEventData eventData)
             {
                 GameManager.LocalPlayer.Currency += 1000;
                 Console.Write("+1000 stars");
