@@ -102,11 +102,12 @@ namespace PolyMod
 		[HarmonyPatch(typeof(CameraController), nameof(CameraController.Awake))]
 		private static void CameraController_Awake()
 		{
-			CameraController.Instance.maxZoom = Plugin.CAMERA_CONSTANT;
+			CameraController.Instance.maxZoom = Plugin.CAMERA_MAXZOOM_CONSTANT;
+			CameraController.Instance.minZoom = Plugin.CAMERA_MINZOOM_CONSTANT;
 			CameraController.Instance.techViewBounds = new(
-				new(Plugin.CAMERA_CONSTANT, Plugin.CAMERA_CONSTANT), CameraController.Instance.techViewBounds.size
+				new(Plugin.CAMERA_MAXZOOM_CONSTANT, Plugin.CAMERA_MAXZOOM_CONSTANT), CameraController.Instance.techViewBounds.size
 			);
-			UnityEngine.GameObject.Find("TechViewWorldSpace").transform.position = new(Plugin.CAMERA_CONSTANT, Plugin.CAMERA_CONSTANT);
+			GameObject.Find("TechViewWorldSpace").transform.position = new(Plugin.CAMERA_MAXZOOM_CONSTANT, Plugin.CAMERA_MAXZOOM_CONSTANT);
 		}
 
 		[HarmonyPostfix]
