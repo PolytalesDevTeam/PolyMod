@@ -2,4 +2,4 @@ Back to game button (in resumed pass and play, brings back to the corresponding 
 
 Move in game name (resumed pass and play game name starts with the corresponding move number).
 
-Pass and play doesn't replay everything since the first move for the first player.
+Remove the timer in the upper right corner (like, where is it even coming from?)
