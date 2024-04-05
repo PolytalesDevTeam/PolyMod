@@ -96,6 +96,10 @@ namespace PolyMod
 			hotseatClient.currentGameState = currentGameState;
 			hotseatClient.lastTurnGameState = initialGameState;
 			hotseatClient.lastSeenCommands = new ushort[replayClient.currentGameState.PlayerStates.Count];
+			for (int j = 0; j < replayClient.currentGameState.PlayerStates.Count; j++)
+			{
+				hotseatClient.lastSeenCommands[j] = (ushort)replayClient.GetLastSeenCommand();
+			}
 			hotseatClient.currentLocalPlayerIndex = hotseatClient.currentGameState.CurrentPlayerIndex;
 			hotseatClient.hasInitializedSaveData = true;
 			hotseatClient.UpdateGameStateImmediate(hotseatClient.currentGameState, StateUpdateReason.GameJoined);
