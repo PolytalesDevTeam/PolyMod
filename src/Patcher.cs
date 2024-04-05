@@ -13,12 +13,8 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameStateUtils), nameof(GameStateUtils.GetRandomPickableTribe), new System.Type[] { typeof(GameState) })]
 		public static bool GameStateUtils_GetRandomPickableTribe(GameState gameState)
 		{
-			if (Plugin.version > 0)
-			{
-				gameState.Version = Plugin.version;
-				DebugConsole.Write($"Changed version to {Plugin.version}");
-				Plugin.version = -1;
-			}
+			gameState.Version = Plugin.version;
+			Plugin.version = 104; //will be changed in next commit
 			return true;
 		}
 
@@ -103,7 +99,7 @@ namespace PolyMod
 		private static void CameraController_Awake()
 		{
 			CameraController.Instance.maxZoom = Plugin.CAMERA_MAXZOOM_CONSTANT;
-			CameraController.Instance.minZoom = Plugin.CAMERA_MINZOOM_CONSTANT;
+			//CameraController.Instance.minZoom = Plugin.CAMERA_MINZOOM_CONSTANT;
 			CameraController.Instance.techViewBounds = new(
 				new(Plugin.CAMERA_MAXZOOM_CONSTANT, Plugin.CAMERA_MAXZOOM_CONSTANT), CameraController.Instance.techViewBounds.size
 			);

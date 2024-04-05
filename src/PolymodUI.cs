@@ -39,7 +39,10 @@ namespace PolyMod
                     popupButtons.Add(new PopupBase.PopupButtonData("RESUME", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnResumeButtonClicked, -1, true, null));
                 }
             }
-
+            else
+            {
+                popupButtons.Add(new PopupBase.PopupButtonData("CHANGE VERSION", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnChangeVersionButtonClicked, -1, true, null));
+            }
             return popupButtons.ToArray();
 
             void OnBackButtonClicked(int buttonId, BaseEventData eventData)
@@ -60,14 +63,30 @@ namespace PolyMod
 
             void OnGetStarsButtonClicked(int buttonId, BaseEventData eventData)
             {
-                GameManager.LocalPlayer.Currency += 1000;
-                Console.Write("+1000 stars");
+                int starsAmount = 1000;
+                GameManager.LocalPlayer.Currency += starsAmount;
+                Console.Write($"{starsAmount} stars has been add to player's currency amount.");
                 isUIActive = false;
             }
 
             void OnResumeButtonClicked(int buttonId, BaseEventData eventData)
             {
                 ReplayResumer.Resume();
+                Console.Write("Replay had been resumed.");
+                isUIActive = false;
+            }
+
+            void OnChangeVersionButtonClicked(int buttonId, BaseEventData eventData)
+            {
+                if(Plugin.version > 0)
+                {
+                    --Plugin.version;
+                    Console.Write($"Changed version to {Plugin.version}.");
+                }
+                else
+                {
+                    Console.Write("Cant set Game Version lower than 0.");
+                }
                 isUIActive = false;
             }
         }

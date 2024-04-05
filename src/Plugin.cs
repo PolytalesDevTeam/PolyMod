@@ -12,14 +12,14 @@ namespace PolyMod
 		internal const uint MAP_MAX_SIZE = 100;
 		internal const int MAP_MAX_PLAYERS = 100;
 		internal const float CAMERA_MAXZOOM_CONSTANT = 1000;
-		internal const float CAMERA_MINZOOM_CONSTANT = 0.5f;
+		//internal const float CAMERA_MINZOOM_CONSTANT = 0.5f;  not used for now until problems resolved
 		internal const int AUTOIDX_STARTS_FROM = 1000;
 		internal static readonly string BASE_PATH = Path.Combine(BepInEx.Paths.BepInExRootPath, "..");
 		internal static readonly string MODS_PATH = Path.Combine(BASE_PATH, "Mods");
 		internal static readonly string MAPS_PATH = Path.Combine(BASE_PATH, "Maps");
 		internal static readonly JsonMergeSettings GLD_MERGE_SETTINGS = new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge };
 
-		internal static int version = -1;
+		internal static int version = 104; //will be changed in next commit
 
 		internal static bool start = false;
 
