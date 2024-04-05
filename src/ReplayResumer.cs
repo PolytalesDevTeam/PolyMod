@@ -14,7 +14,6 @@ namespace PolyMod
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-
 			GameManager.instance.SetLoadingGame(true);
 			Log.Info("{0} Loading new Hotseat {1} Game from replay", new Il2CppSystem.Object[]
 			{
