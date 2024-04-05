@@ -33,15 +33,11 @@ namespace PolyMod
 			if (taskAwaiter.GetResult())
 			{
 				GameManager.instance.LoadLevel();
-				PopupManager.GetBasicPopup(new PopupManager.BasicPopupData
-				{
-					header = "Resuming from Replay",
-					description = "The game has been turned from a replay into a hotseat game. You can now continue playing.",
-					buttonData = new PopupBase.PopupButtonData[]
-				{
-					new PopupBase.PopupButtonData("buttons.ok", PopupBase.PopupButtonData.States.Selected, null, -1, true, null)
-				}
-				}).Show();
+				BasicPopup resumePopup = PopupManager.GetBasicPopup();
+				resumePopup.Header = "Resuming from Replay";
+				resumePopup.Description = "The game has been turned from a replay into a hotseat game. You can now continue playing.";
+				resumePopup.buttonData = new PopupBase.PopupButtonData[]{new PopupBase.PopupButtonData(Localization.Get("buttons.ok"), PopupBase.PopupButtonData.States.Selected, null, -1, true, null)};
+				resumePopup.Show();
 			}
 		}
 
@@ -69,6 +65,7 @@ namespace PolyMod
 			GameState currentGameState;
 			GameState otherCurrentGameState;
 			initialGameState.Settings.GameType = GameType.PassAndPlay;
+			initialGameState.Settings.gameName = "(From move " + replayClient.GetLastSeenCommand() + ") " + initialGameState.Settings.gameName;
 			byte[] array = SerializationHelpers.ToByteArray(initialGameState, replayClient.initialGameState.Version);
 			SerializationHelpers.FromByteArray(array, out currentGameState);
 			SerializationHelpers.FromByteArray(array, out lastTurnGameState);
