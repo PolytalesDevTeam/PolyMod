@@ -1,3 +1,5 @@
-Back to game button (in resumed pass and play, brings back to the corresponding replay, at the corresponding time)
+Back to game button (in resumed pass and play, brings back to the corresponding replay, at the corresponding time).
 
-Move in game name (resumed pass and play game name starts with the corresponding move number)
+Move in game name (resumed pass and play game name starts with the corresponding move number).
+
+Pass and play doesn't replay everything since the first move for the first player.
