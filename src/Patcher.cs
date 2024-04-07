@@ -1,14 +1,339 @@
-﻿using HarmonyLib;
+﻿using System.Diagnostics;
+using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
+using PolytopiaBackendBase;
 using PolytopiaBackendBase.Game;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace PolyMod
 {
 	internal class Patcher
 	{
+		// Bot mode code
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.CreateCustomGameModeList))]
+		private static bool GameSetupScreen_CreateCustomGameModeList(ref GameSetupScreen __instance, ref UIHorizontalList __result)
+		{
+			string[] array = new string[]
+			{
+				Localization.Get(GameModeUtils.GetTitle(GameMode.Perfection)),
+				Localization.Get(GameModeUtils.GetTitle(GameMode.Domination)),
+				Localization.Get(GameModeUtils.GetTitle(GameMode.Sandbox)),
+				Localization.Get(GameModeUtils.GetTitle((GameMode)BotGame.bot)),
+			};
+			__result = __instance.CreateHorizontalList("gamesettings.mode", array, new Action<int>(__instance.OnCustomGameModeChanged), __instance.GetCustomGameModeIndexFromSettings(), null, -1, null);
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameModeUtils), nameof(GameModeUtils.GetTitle))]
+		private static bool GameModeUtils_GetTitle(GameMode gameMode, ref string __result)
+		{
+			if (gameMode == (GameMode)BotGame.bot)
+			{
+				__result = "gamemode.bot";
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameModeUtils), nameof(GameModeUtils.GetDescription))]
+		private static bool GameModeUtils_GetDescription(GameMode gameMode, ref string __result)
+		{
+			if (gameMode == (GameMode)BotGame.bot)
+			{
+				__result = "gamemode.bot.description";
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.GetCustomGameModeIndexFromSettings))]
+		private static bool GameSetupScreen_GetCustomGameModeIndexFromSettings(ref GameSetupScreen __instance, ref int __result)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode == (GameMode)BotGame.bot)
+			{
+				__result = 3;
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.OnCustomGameModeChanged))]
+		private static bool GameSetupScreen_OnCustomGameModeChanged(ref GameSetupScreen __instance, int index)
+		{
+			if (index == 3)
+			{
+				GameManager.PreliminaryGameSettings.RulesGameMode = (GameMode)BotGame.bot;
+				__instance.UpdateOpponentList();
+				GameManager.PreliminaryGameSettings.SaveToDisk();
+				__instance.RefreshInfo();
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.UpdateOpponentList))]
+		private static bool GameSetupScreen_UpdateOpponentList(ref GameSetupScreen __instance)
+		{
+			if (GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return true;
+			}
+			if (__instance.opponentList == null)
+			{
+				return false;
+			}
+			if (GameManager.PreliminaryGameSettings.GameType == GameType.Matchmaking)
+			{
+				return false;
+			}
+			bool flag = GameManager.PreliminaryGameSettings.BaseGameMode == GameMode.Custom;
+			bool flag2 = flag && GameManager.PreliminaryGameSettings.RulesGameMode != GameMode.Domination && GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot;
+			bool flag4 = GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot;
+			int num = flag ? MapDataExtensions.GetMaximumOpponentCountForMapSize(GameManager.PreliminaryGameSettings.MapSize, GameManager.PreliminaryGameSettings.mapPreset) : GameManager.GetMaxOpponents();
+			for (int i = 0; i < __instance.opponentList.items.Length; i++)
+			{
+				bool flag3 = (flag2 && i == 0) || (i > 0 && i <= num);
+				__instance.opponentList.items[i].gameObject.SetActive(flag3);
+				__instance.opponentList.items[i].text = flag4 ? i.ToString() : (i + 1).ToString();
+			}
+			__instance.opponentList.RefreshScrollpositions();
+			__instance.opponentList.RefreshNavigationIndexes();
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.IsPlayerLocal))]
+		public static bool ClientBase_IsPlayerLocal(ref bool __result, byte playerId)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			__result = true;
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameManager), nameof(GameManager.IsPlayerViewing))]
+		public static bool GameManager_IsPlayerViewing(ref bool __result)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode == (GameMode)BotGame.bot && BotGame.unview)
+			{
+				__result = false;
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
+		public static bool WipePlayerReaction_Execute()
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			GameManager.Client.ActionManager.isRecapping = true;
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
+		public static void WipePlayerReaction_Execute_Postfix()
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return;
+			}
+			GameManager.Client.ActionManager.isRecapping = false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
+		public static bool StartTurnReaction_Execute()
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			BotGame.localClient = GameManager.Client as LocalClient;
+			if (BotGame.localClient == null)
+			{
+				return true;
+			}
+			// Replace the client (temporarily)
+			GameManager.instance.client = new ReplayClient();
+			GameManager.Client.currentGameState = BotGame.localClient.GameState;
+			GameManager.Client.CreateOrResetActionManager(BotGame.localClient.lastSeenCommand);
+			GameManager.Client.ActionManager.isRecapping = true;
+			LevelManager.GetClientInteraction().ClearSelection(); // Clear selection circles.
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.Refresh))]
+		public static bool MapRenderer_Refresh()
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			if (BotGame.localClient != null)
+			{ // Repair the client as soon as possible
+				GameManager.instance.client = BotGame.localClient;
+				BotGame.localClient = null;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
+		public static bool TaskCompletedReaction_Execute(ref TaskCompletedReaction __instance, ref byte __state)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			__state = __instance.action.PlayerId;
+			__instance.action.PlayerId = 255;
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
+		public static void TaskCompletedReaction_Execute_Postfix(ref TaskCompletedReaction __instance, ref byte __state)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return;
+			}
+			__instance.action.PlayerId = __state;
+		}
+
+		// Patch multiple classes with the same method
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
+		[HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
+		[HarmonyPatch(typeof(ExamineRuinsReaction), nameof(ExamineRuinsReaction.Execute))]
+		[HarmonyPatch(typeof(InfiltrationRewardReaction), nameof(InfiltrationRewardReaction.Execute))]
+		[HarmonyPatch(typeof(EstablishEmbassyReaction), nameof(EstablishEmbassyReaction.Execute))]
+		[HarmonyPatch(typeof(DestroyEmbassyReaction), nameof(DestroyEmbassyReaction.Execute))]
+		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
+		public static bool Patch_Execute(ReactionBase __instance)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			BotGame.unview = true;
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
+		[HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
+		[HarmonyPatch(typeof(ExamineRuinsReaction), nameof(ExamineRuinsReaction.Execute))]
+		[HarmonyPatch(typeof(InfiltrationRewardReaction), nameof(InfiltrationRewardReaction.Execute))]
+		[HarmonyPatch(typeof(EstablishEmbassyReaction), nameof(EstablishEmbassyReaction.Execute))]
+		[HarmonyPatch(typeof(DestroyEmbassyReaction), nameof(DestroyEmbassyReaction.Execute))]
+		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
+		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
+		public static void Patch_Execute_Post()
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				if (BotGame.unview)
+				{
+					DebugConsole.Write("Uh, what!?");
+				}
+				return;
+			}
+			BotGame.unview = false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(ClientActionManager), nameof(ClientActionManager.Update))]
+		public static void Patch_Update()
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				if (BotGame.unview)
+				{
+					DebugConsole.Write("Uh, what!?");
+				}
+				if (BotGame.localClient != null)
+				{
+					DebugConsole.Write("Sorry, what!?");
+				}
+				return;
+			}
+			if (BotGame.localClient != null)
+			{
+				GameManager.instance.client = BotGame.localClient;
+				BotGame.localClient = null;
+			}
+			BotGame.unview = false;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.CreateSession))]
+		public static void ClientBase_CreateSession(ref Il2CppSystem.Threading.Tasks.Task<CreateSessionResult> __result, ref ClientBase __instance, GameSettings settings, List<PlayerState> players)
+		{
+			if (__instance.clientType != ClientBase.ClientType.Local || GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return;
+			}
+			for (int j = 0; j < __instance.GameState.PlayerCount; j++)
+			{
+				PlayerState playerState = __instance.GameState.PlayerStates[j];
+				playerState.AutoPlay = false;
+				playerState.UserName = AccountManager.AliasInternal;
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.GetCurrentLocalPlayer))]
+		public static bool ClientBase_GetCurrentLocalPlayer(ref PlayerState __result, ref ClientBase __instance)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			__result = __instance.GameState.PlayerStates[__instance.GameState.CurrentPlayerIndex];
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(AI), nameof(AI.GetGameProgress))]
+		public static bool AI_GetGameProgress(GameState gameState, PlayerState winningPlayer, ref float __result, ref AI __instance)
+		{
+			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			float num = (float)winningPlayer.cities / Math.Max(0.1f, (float)MapDataExtensions.CountCities(gameState));
+			float num2 = gameState.CurrentTurn / (float)gameState.Settings.rules.TurnLimit;
+			__result = Math.Max(num, num2);
+			return false;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameManager), nameof(GameManager.LoadLevel))]
+		public static void GameManager_LoadLevel(ref GameManager __instance)
+		{
+			GameManager.debugAutoPlayLocalPlayer = GameManager.Client.GameState.Settings.RulesGameMode == (GameMode)BotGame.bot;
+		}
+
+		// Other code
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameStateUtils), nameof(GameStateUtils.GetRandomPickableTribe), new System.Type[] { typeof(GameState) })]
 		public static bool GameStateUtils_GetRandomPickableTribe(GameState gameState)
