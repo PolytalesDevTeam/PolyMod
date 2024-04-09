@@ -297,19 +297,19 @@ namespace PolyMod
 			}
 		}
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
-        private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
-        {
-            int num = __instance.buttons.Length;
-            for (int i = 0; i < num; i++)
-            {
-                UITextButton uitextButton = __instance.buttons[i];
-                Vector2 vector = new Vector2((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
-                uitextButton.rectTransform.anchorMin = vector;
-                uitextButton.rectTransform.anchorMax = vector;
-                uitextButton.rectTransform.pivot = vector;
-            }
-        }
-    }
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
+		private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
+		{
+			int num = __instance.buttons.Length;
+			for (int i = 0; i < num; i++)
+			{
+				UITextButton uitextButton = __instance.buttons[i];
+				Vector2 vector = new Vector2((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
+				uitextButton.rectTransform.anchorMin = vector;
+				uitextButton.rectTransform.anchorMax = vector;
+				uitextButton.rectTransform.pivot = vector;
+			}
+		}
+	}
 }
