@@ -273,44 +273,43 @@ namespace PolyMod
 			MapLoader.map = null;
 		}
 
-        //do not touch TechItem patches, they prevent game from crashing when custom tribe(idfk how this works)
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
-        private static void TechItem_GetUnlockItems(TechData data, PlayerState playerState, bool onlyPickFirstItem = false)
-        {
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
-        private static void TechItem_SetupComplete()
-        {
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(BasicPopup), nameof(BasicPopup.Update))]
-        private static void BasicPopup_Update(BasicPopup __instance)
-        {
-			if (PolymodUI.isUIActive)
-			{
-                __instance.rectTransform.SetWidth(PolymodUI.width);
-                __instance.rectTransform.SetHeight(PolymodUI.height);
-            }
-        }
+		//do not touch TechItem patches, they prevent game from crashing when opening tech tree while playing as custom tribe(idfk how this works)
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
+		private static void TechItem_GetUnlockItems(TechData data, PlayerState playerState, bool onlyPickFirstItem = false)
+		{
+		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
-		private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
+		private static void TechItem_SetupComplete()
 		{
-			int num = __instance.buttons.Length;
-			for (int i = 0; i < num; i++)
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(BasicPopup), nameof(BasicPopup.Update))]
+		private static void BasicPopup_Update(BasicPopup __instance)
+		{
+			if (PolymodUI.isUIActive)
 			{
-				UITextButton uitextButton = __instance.buttons[i];
-				Vector2 vector = new Vector2((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
-				uitextButton.rectTransform.anchorMin = vector;
-				uitextButton.rectTransform.anchorMax = vector;
-				uitextButton.rectTransform.pivot = vector;
+				__instance.rectTransform.SetWidth(PolymodUI.width);
+				__instance.rectTransform.SetHeight(PolymodUI.height);
 			}
 		}
-	}
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
+        private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
+        {
+            int num = __instance.buttons.Length;
+            for (int i = 0; i < num; i++)
+            {
+                UITextButton uitextButton = __instance.buttons[i];
+                Vector2 vector = new Vector2((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
+                uitextButton.rectTransform.anchorMin = vector;
+                uitextButton.rectTransform.anchorMax = vector;
+                uitextButton.rectTransform.pivot = vector;
+            }
+        }
+    }
 }
