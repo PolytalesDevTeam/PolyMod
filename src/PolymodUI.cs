@@ -1,37 +1,58 @@
 ﻿using PolytopiaBackendBase.Game;
+using UnityEngine;
 using UnityEngine.EventSystems;
 using static PopupBase;
 
 namespace PolyMod
 {
-    internal class PolymodUI
+    internal static class PolymodUI
     {
         internal static bool isUIActive = false;
         internal static int width = 600;
         internal static int height = 200;
-        public static void OnKeysPressed() {
+        internal static int inputValue = 0;
 
+        public static void Show()
+        {
             isUIActive = true;
 
-            BasicPopup modUi = PopupManager.GetBasicPopup();
+            SearchFriendCodePopup polymodPopup = PopupManager.GetSearchFriendCodePopup();
 
-            modUi.Header = "POLYMOD UI";
-            modUi.Description = "Here u can do shit.";
+            polymodPopup.Header = "POLYMOD UI";
+            polymodPopup.Description = "Here u can do shit.";
 
-            modUi.buttonData = CreatePopupButtonData();
-            
-            modUi.Show();
+            polymodPopup.buttonData = CreatePopupButtonData();
+            polymodPopup.Show(new Vector2((float)NativeHelpers.Screen().x * 0.5f, (float)NativeHelpers.Screen().y * 0.5f));
+
+            UINavigationManager.Select(polymodPopup.inputfield);
+            polymodPopup.CurrentSelectable = polymodPopup.inputfield;
         }
+
+        public static void OnInputChanged(SearchFriendCodePopup polymodPopup, string value)
+        {
+            if (int.TryParse(polymodPopup.inputfield.text, out int ignoreValue))
+            {
+                polymodPopup.Buttons[1].ButtonEnabled = (!string.IsNullOrEmpty(polymodPopup.inputfield.text) && polymodPopup.inputfield.text.Length <= 10);
+                inputValue = int.Parse(polymodPopup.inputfield.text);
+            }
+            else
+            {
+                polymodPopup.Buttons[1].ButtonEnabled = false;
+            }
+        }
+
         public static PopupButtonData[] CreatePopupButtonData()
         {
-            List<PopupBase.PopupButtonData> popupButtons = new List<PopupBase.PopupButtonData>();
-            popupButtons.Add(new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnBackButtonClicked, -1, true, null));
+            List<PopupBase.PopupButtonData> popupButtons = new List<PopupBase.PopupButtonData>
+            {
+                new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnBackButtonClicked, -1, true, null)
+            };
 
             if (GameManager.Instance.isLevelLoaded)
             {
                 if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
                 {
-                    popupButtons.Add(new PopupBase.PopupButtonData("GET STARS", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
+                    popupButtons.Add(new PopupBase.PopupButtonData("GET STARS", PopupBase.PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
                     popupButtons.Add(new PopupBase.PopupButtonData("REVEAL MAP", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapRevealButtonClicked, -1, true, null));
                 }
                 if (GameManager.Instance.client.IsReplay)
@@ -41,14 +62,10 @@ namespace PolyMod
             }
             else
             {
-                popupButtons.Add(new PopupBase.PopupButtonData("CHANGE VERSION", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnChangeVersionButtonClicked, -1, true, null));
+                popupButtons.Add(new PopupBase.PopupButtonData("CHANGE VERSION", PopupBase.PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnChangeVersionButtonClicked, -1, true, null));
             }
-            return popupButtons.ToArray();
 
-            void OnBackButtonClicked(int buttonId, BaseEventData eventData)
-            {
-                isUIActive = false;
-            }
+            return popupButtons.ToArray();
 
             void OnMapRevealButtonClicked(int buttonId, BaseEventData eventData)
             {
@@ -63,9 +80,8 @@ namespace PolyMod
 
             void OnGetStarsButtonClicked(int buttonId, BaseEventData eventData)
             {
-                int starsAmount = 1000;
-                GameManager.LocalPlayer.Currency += starsAmount;
-                Console.Write($"{starsAmount} stars has been add to player's currency amount.");
+                GameManager.LocalPlayer.Currency += inputValue;
+                Console.Write($"{inputValue} stars has been added to player's currency amount.");
                 isUIActive = false;
             }
 
@@ -78,15 +94,20 @@ namespace PolyMod
 
             void OnChangeVersionButtonClicked(int buttonId, BaseEventData eventData)
             {
-                if(Plugin.version > 0)
+                if (inputValue >= 0)
                 {
-                    --Plugin.version;
+                    Plugin.version = inputValue;
                     Console.Write($"Changed version to {Plugin.version}.");
                 }
                 else
                 {
                     Console.Write("Cant set Game Version lower than 0.");
                 }
+                isUIActive = false;
+            }
+
+            void OnBackButtonClicked(int buttonId, BaseEventData eventData)
+            {
                 isUIActive = false;
             }
         }

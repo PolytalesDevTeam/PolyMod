@@ -19,7 +19,7 @@ namespace PolyMod
 		internal static readonly string MAPS_PATH = Path.Combine(BASE_PATH, "Maps");
 		internal static readonly JsonMergeSettings GLD_MERGE_SETTINGS = new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge };
 
-		internal static int version = 104; //will be changed in next commit
+		internal static int version = -1;
 
 		internal static bool start = false;
 
@@ -44,7 +44,7 @@ namespace PolyMod
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !PolymodUI.isUIActive)
             {
-				PolymodUI.OnKeysPressed();
+				PolymodUI.Show();
             }
         }
 

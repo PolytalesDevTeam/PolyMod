@@ -9,12 +9,37 @@ namespace PolyMod
 {
 	internal class Patcher
 	{
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameStateUtils), nameof(GameStateUtils.GetRandomPickableTribe), new System.Type[] { typeof(GameState) })]
-		public static bool GameStateUtils_GetRandomPickableTribe(GameState gameState)
+		public static void GameStateUtils_GetRandomPickableTribe(GameState gameState)
 		{
-			gameState.Version = Plugin.version;
-			Plugin.version = 104; //will be changed in next commit
+			if (Plugin.version != -1)
+			{
+				gameState.Version = Plugin.version;
+				Plugin.version = -1;
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SearchFriendCodePopup), nameof(SearchFriendCodePopup.OnInputChanged))]
+		private static bool SearchFriendCodePopup_OnInputChanged(SearchFriendCodePopup __instance, string value)
+		{
+			if (PolymodUI.isUIActive)
+			{
+				PolymodUI.OnInputChanged(__instance, value);
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SearchFriendCodePopup), nameof(SearchFriendCodePopup.OnInputDone))]
+		private static bool SearchFriendCodePopup_OnInputDone(SearchFriendCodePopup __instance, string value)
+		{
+			if (PolymodUI.isUIActive)
+			{
+				return false;
+			}
 			return true;
 		}
 
