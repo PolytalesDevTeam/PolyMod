@@ -309,7 +309,7 @@ namespace PolyMod
             {
                 UITextButton uitextButton = UnityEngine.Object.Instantiate<UITextButton>(__instance.buttonPrefab, __instance.transform);
                 
-                Vector2 vector = new Vector2((num == 1) ? 0.5f : (((float)i / ((float)num - 1.0f))), 0.5f); // literally one line i have to patch here
+                Vector2 vector = new Vector2((num == 1) ? 0.5f : ((i / (num - 1.0f))), 0.5f); // literally one line i have to patch here
                 uitextButton.rectTransform.anchorMin = vector;
                 uitextButton.rectTransform.anchorMax = vector;
                 uitextButton.rectTransform.pivot = vector;

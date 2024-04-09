@@ -74,21 +74,21 @@ namespace PolyMod
                     GameManager.GameState.Map.Tiles[i].SetExplored(GameManager.LocalPlayer.Id, true);
                 }
                 MapRenderer.Current.Refresh(false);
-                Console.Write("Map Revealed");
+                NotificationManager.Notify("Map has been revealed.", "Map Reveal", null, null);
                 isUIActive = false;
             }
 
             void OnGetStarsButtonClicked(int buttonId, BaseEventData eventData)
             {
                 GameManager.LocalPlayer.Currency += inputValue;
-                Console.Write($"{inputValue} stars has been added to player's currency amount.");
+                NotificationManager.Notify($"{inputValue} stars has been added to player's currency amount.", "Star Hack", null, null);
                 isUIActive = false;
             }
 
             void OnResumeButtonClicked(int buttonId, BaseEventData eventData)
             {
                 ReplayResumer.Resume();
-                Console.Write("Replay had been resumed.");
+                NotificationManager.Notify("Replay had been resumed.", "Replay Resume", null, null);
                 isUIActive = false;
             }
 
@@ -98,10 +98,11 @@ namespace PolyMod
                 {
                     Plugin.version = inputValue;
                     Console.Write($"Changed version to {Plugin.version}.");
+                    NotificationManager.Notify($"Changed version to {Plugin.version}.", "Version Changer", null, null);
                 }
                 else
                 {
-                    Console.Write("Cant set Game Version lower than 0.");
+                    NotificationManager.Notify("Cant set Game Version lower than 0.", "Version Changer", null, null);
                 }
                 isUIActive = false;
             }
