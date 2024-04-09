@@ -298,60 +298,19 @@ namespace PolyMod
             }
         }
 
-		//shitty patch I know, should be refactored after
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
-        private static bool PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
-        {
-            int num = buttonData.Length;
-            __instance.buttons = new UITextButton[num];
-            for (int i = 0; i < num; i++)
-            {
-                UITextButton uitextButton = UnityEngine.Object.Instantiate<UITextButton>(__instance.buttonPrefab, __instance.transform);
-                
-                Vector2 vector = new Vector2((num == 1) ? 0.5f : ((i / (num - 1.0f))), 0.5f); // literally one line i have to patch here
-                uitextButton.rectTransform.anchorMin = vector;
-                uitextButton.rectTransform.anchorMax = vector;
-                uitextButton.rectTransform.pivot = vector;
-                uitextButton.rectTransform.anchoredPosition = Vector2.zero;
-                uitextButton.Key = buttonData[i].text;
-                uitextButton.name = string.Format("PopupButton_{0}", uitextButton.text);
-                uitextButton.id = buttonData[i].id;
-                if (buttonData[i].closesPopup)
-                {
-                    uitextButton.OnClicked += __instance.hideCallback;
-                }
-                if (buttonData[i].callback != null)
-                {
-                    uitextButton.OnClicked += buttonData[i].callback;
-                }
-                if (buttonData[i].customColorStates != null)
-                {
-                    uitextButton.BgColorStates = buttonData[i].customColorStates;
-                }
-                __instance.buttons[i] = uitextButton;
-                if (buttonData[i].state == PopupBase.PopupButtonData.States.Selected)
-                {
-                    __instance.startSelection = i;
-                }
-                else if (buttonData[i].state == PopupBase.PopupButtonData.States.Disabled)
-                {
-                    uitextButton.ButtonEnabled = false;
-                }
-                __instance.buttons[i].AnimationsEnabled = __instance.buttonAnimationsEnabled;
-            }
-            if (num >= 2 && buttonData[0].customColorStates == null)
-            {
-                __instance.buttons[0].LabelColorStates = new UIButtonBase.ColorStates(__instance.leftButtonLabelColors);
-                __instance.buttons[0].BgColorStates = new UIButtonBase.ColorStates(__instance.leftButtonBgColors);
-            }
-            if (__instance.startSelection >= 0)
-            {
-                PolytopiaInput.Omnicursor.AffixToUIElement(__instance.buttons[__instance.startSelection].GetComponent<RectTransform>());
-            }
-            __instance.gameObject.SetActive(true);
-
-            return false;
-        }
-    }
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
+		private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
+		{
+			int num = __instance.buttons.Length;
+			for (int i = 0; i < num; i++)
+			{
+				UITextButton uitextButton = __instance.buttons[i];
+				Vector2 vector = new Vector2((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
+				uitextButton.rectTransform.anchorMin = vector;
+				uitextButton.rectTransform.anchorMax = vector;
+				uitextButton.rectTransform.pivot = vector;
+			}
+		}
+	}
 }
