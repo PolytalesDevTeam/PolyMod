@@ -50,6 +50,10 @@ namespace PolyMod
 
             if (GameManager.Instance.isLevelLoaded)
             {
+                if (GameManager.GameState.Settings.GameType == GameType.PassAndPlay && GameManager.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
+                {
+                    popupButtons.Add(new PopupBase.PopupButtonData("BACK TO REPLAY", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackToReplayButtonClicked, -1, true, null));
+                }
                 if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
                 {
                     popupButtons.Add(new PopupButtonData("GET STARS", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
@@ -108,6 +112,12 @@ namespace PolyMod
 
             void OnBackButtonClicked(int buttonId, BaseEventData eventData)
             {
+                isUIActive = false;
+            }
+
+            void OnBackToReplayButtonClicked(int buttonId, BaseEventData eventData)
+            {
+                ReplayResumer.BackToReplay();
                 isUIActive = false;
             }
         }
