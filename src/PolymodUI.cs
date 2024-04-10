@@ -9,12 +9,14 @@ namespace PolyMod
     {
         internal static bool isUIActive = false;
         internal static int width = 600;
+        internal static float widthModifier = 0f;
         internal static int height = 200;
         internal static int inputValue = 0;
 
         public static void Show()
         {
             isUIActive = true;
+            widthModifier = 1.0f;
 
             SearchFriendCodePopup polymodPopup = PopupManager.GetSearchFriendCodePopup();
 
@@ -52,6 +54,7 @@ namespace PolyMod
             {
                 if (GameManager.GameState.Settings.GameType == GameType.PassAndPlay && GameManager.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
                 {
+                    widthModifier = 1.4f;
                     popupButtons.Add(new PopupBase.PopupButtonData("BACK TO REPLAY", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction) OnBackToReplayButtonClicked, -1, true, null));
                 }
                 if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
