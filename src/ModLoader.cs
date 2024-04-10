@@ -64,7 +64,9 @@ namespace PolyMod
 
 			EnumCache<MapPreset>.AddMapping("Custom", (MapPreset)500);
 
-			foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
+            Minerskagg.AddMappings();
+
+            foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
 			{
 				JObject token = jtoken.Cast<JObject>();
 
@@ -85,8 +87,7 @@ namespace PolyMod
 					++idx;
 					token["idx"] = idx;
 					string id = Plugin.GetJTokenName(token);
-
-					switch (Plugin.GetJTokenName(token, 2))
+                    switch (Plugin.GetJTokenName(token, 2))
 					{
 						case "tribeData":
 							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)idx);
