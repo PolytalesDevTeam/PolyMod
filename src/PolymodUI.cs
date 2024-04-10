@@ -43,26 +43,26 @@ namespace PolyMod
 
         public static PopupButtonData[] CreatePopupButtonData()
         {
-            List<PopupBase.PopupButtonData> popupButtons = new List<PopupBase.PopupButtonData>
+            List<PopupButtonData> popupButtons = new List<PopupButtonData>
             {
-                new PopupBase.PopupButtonData(Localization.Get("buttons.back"), PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnBackButtonClicked, -1, true, null)
+                new PopupButtonData(Localization.Get("buttons.back"), PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnBackButtonClicked, -1, true, null)
             };
 
             if (GameManager.Instance.isLevelLoaded)
             {
                 if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
                 {
-                    popupButtons.Add(new PopupBase.PopupButtonData("GET STARS", PopupBase.PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
-                    popupButtons.Add(new PopupBase.PopupButtonData("REVEAL MAP", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapRevealButtonClicked, -1, true, null));
+                    popupButtons.Add(new PopupButtonData("GET STARS", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
+                    popupButtons.Add(new PopupButtonData("REVEAL MAP", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapRevealButtonClicked, -1, true, null));
                 }
                 if (GameManager.Instance.client.IsReplay)
                 {
-                    popupButtons.Add(new PopupBase.PopupButtonData("RESUME", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnResumeButtonClicked, -1, true, null));
+                    popupButtons.Add(new PopupButtonData("RESUME", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnResumeButtonClicked, -1, true, null));
                 }
             }
             else
             {
-                popupButtons.Add(new PopupBase.PopupButtonData("CHANGE VERSION", PopupBase.PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnChangeVersionButtonClicked, -1, true, null));
+                popupButtons.Add(new PopupButtonData("CHANGE VERSION", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnChangeVersionButtonClicked, -1, true, null));
             }
 
             return popupButtons.ToArray();
@@ -74,21 +74,21 @@ namespace PolyMod
                     GameManager.GameState.Map.Tiles[i].SetExplored(GameManager.LocalPlayer.Id, true);
                 }
                 MapRenderer.Current.Refresh(false);
-                NotificationManager.Notify("Map has been revealed.", "Map Reveal", null, null);
+                NotificationManager.Notify("Map has been revealed.", "POLYMOD", null, null);
                 isUIActive = false;
             }
 
             void OnGetStarsButtonClicked(int buttonId, BaseEventData eventData)
             {
                 GameManager.LocalPlayer.Currency += inputValue;
-                NotificationManager.Notify($"{inputValue} stars has been added to player's currency amount.", "Star Hack", null, null);
+                NotificationManager.Notify($"{inputValue} stars has been added to player's currency amount.", "POLYMOD", null, null);
                 isUIActive = false;
             }
 
             void OnResumeButtonClicked(int buttonId, BaseEventData eventData)
             {
                 ReplayResumer.Resume();
-                NotificationManager.Notify("Replay had been resumed.", "Replay Resume", null, null);
+                NotificationManager.Notify("Replay had been resumed.", "POLYMOD", null, null);
                 isUIActive = false;
             }
 
@@ -97,12 +97,11 @@ namespace PolyMod
                 if (inputValue >= 0)
                 {
                     Plugin.version = inputValue;
-                    Console.Write($"Changed version to {Plugin.version}.");
-                    NotificationManager.Notify($"Changed version to {Plugin.version}.", "Version Changer", null, null);
+                    NotificationManager.Notify($"Changed version to {Plugin.version}.", "POLYMOD", null, null);
                 }
                 else
                 {
-                    NotificationManager.Notify("Cant set Game Version lower than 0.", "Version Changer", null, null);
+                    NotificationManager.Notify("Cant set Game Version lower than 0.", "POLYMOD", null, null);
                 }
                 isUIActive = false;
             }

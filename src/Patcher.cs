@@ -71,19 +71,6 @@ namespace PolyMod
 			__result = MapLoader.GetCapitals(__result, width, playerCount);
 		}
 
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(MapDataExtensions), nameof(MapDataExtensions.GenerateShoreLines))]
-		public static bool MapDataExtensions_GenerateShoreLines(MapData map)
-		{
-			int width = (int)map.Width;
-			int num = width * (int)(map.Height - 1);
-			for (int i = 0; i < map.Tiles.Length; i++)
-			{
-				map.Tiles[i].shoreLines = TileData.ShorelineFlag.None;
-			}
-			return false;
-		}
-
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.GetMaxOpponents))]
 		private static void GameManager_GetMaxOpponents(ref int __result)
