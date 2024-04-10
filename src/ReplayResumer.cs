@@ -5,10 +5,14 @@ namespace PolyMod
 {
 	internal static class ReplayResumer
 	{
+		internal static ClientBase? replayClient;
+		internal static string nameStart = "(From move ";
+		internal static string nameEnd = ")";
+
 		public static void BackToReplay()
 		{
 			ClientBase passAndPlayClient = GameManager.Client;
-			if (!passAndPlayClient.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
+			if (!passAndPlayClient.GameState.Settings.GameName.StartsWith(nameStart))
 			{
 				Log.Warning("{0} Command used outside of resumed game, name is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameName });
 				GameManager.instance.SetLoadingGame(false);
@@ -20,13 +24,13 @@ namespace PolyMod
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-			if (Plugin.replayClient == null)
+			if (replayClient == null)
 			{
 				Log.Warning("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-			if (Plugin.replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName.Substring(passAndPlayClient.GameState.Settings.GameName.Length - 36))
+			if (replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName.Substring(passAndPlayClient.GameState.Settings.GameName.Length - 36))
 			{
 				Log.Warning("{0} Replay client game id does not match resumed game id", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
 				GameManager.instance.SetLoadingGame(false);
@@ -35,10 +39,10 @@ namespace PolyMod
 			Log.Info("{0} Loading replay {1} Game", new Il2CppSystem.Object[]
 			{
 				"<color=#FFFFFF>[GameManager]</color>",
-				Plugin.replayClient.initialGameState.Settings.BaseGameMode.ToString()
+				replayClient.initialGameState.Settings.BaseGameMode.ToString()
 			});
 			GameManager.instance.SetLoadingGame(true);
-			GameManager.instance.client = Plugin.replayClient;
+			GameManager.instance.client = replayClient;
 			GameManager.instance.LoadLevel();
 		}
 		public static void Resume()
@@ -96,7 +100,7 @@ namespace PolyMod
 
 		public static Il2CppSystem.Threading.Tasks.Task<bool> TransformClient(ClientBase replayClient, HotseatClient hotseatClient)
 		{
-			Plugin.replayClient = replayClient;
+			ReplayResumer.replayClient = replayClient;
 			GameState initialGameState = replayClient.initialGameState;
 			GameState lastTurnGameState;
 			GameState currentGameState;
@@ -196,8 +200,5 @@ namespace PolyMod
 			}
 			return true;
 		}
-
-		internal static string nameStart = "(From move ";
-		internal static string nameEnd = ")";
 	}
 }
