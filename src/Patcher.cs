@@ -279,7 +279,7 @@ namespace PolyMod
 		{
 			if (PolymodUI.isUIActive)
 			{
-				__instance.rectTransform.SetWidth(PolymodUI.width * PolymodUI.widthModifier);
+				__instance.rectTransform.SetWidth(PolymodUI.width);
 				__instance.rectTransform.SetHeight(PolymodUI.height);
 			}
 		}
