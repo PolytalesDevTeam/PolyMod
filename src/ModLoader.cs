@@ -2,6 +2,7 @@
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
 using PolytopiaBackendBase.Game;
@@ -23,6 +24,20 @@ namespace PolyMod
 			{
 				ZipArchive mod = new(File.OpenRead(modname));
 
+				ZipArchiveEntry? patch = mod.GetEntry("patch.json");
+				if (patch != null)
+				{
+					try
+					{
+						Patch(gld, JObject.Parse(new StreamReader(patch.Open()).ReadToEnd()));
+					}
+					catch
+					{
+						Log.Warning(modname + " was not loaded (JSON error?)");
+						continue;
+					}
+				}
+
 				foreach (var entry in mod.Entries)
 				{
 					string name = entry.ToString();
@@ -31,12 +46,6 @@ namespace PolyMod
 					{
 						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), BuildSprite(entry.ReadBytes()));
 					}
-				}
-
-				ZipArchiveEntry? patch = mod.GetEntry("patch.json");
-				if (patch != null)
-				{
-					Patch(gld, JObject.Parse(new StreamReader(patch.Open()).ReadToEnd()));
 				}
 			}
 		}
