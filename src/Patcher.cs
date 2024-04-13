@@ -10,14 +10,14 @@ namespace PolyMod
 	internal class Patcher
 	{
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(GameStateUtils), nameof(GameStateUtils.GetRandomPickableTribe), new System.Type[] { typeof(GameState) })]
-		public static void GameStateUtils_GetRandomPickableTribe(GameState gameState)
+		[HarmonyPatch(typeof(VersionManager), nameof(VersionManager.GameVersion), MethodType.Getter)]
+		private static void VersionManager_GameVersion(ref int __result)
 		{
-			if (Plugin.version != -1)
+			if (Plugin.version == -1)
 			{
-				gameState.Version = Plugin.version;
-				Plugin.version = -1;
+				Plugin.version = 104;
 			}
+			__result = Plugin.version;
 		}
 
 		[HarmonyPrefix]
