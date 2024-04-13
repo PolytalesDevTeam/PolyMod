@@ -298,5 +298,192 @@ namespace PolyMod
 				uitextButton.rectTransform.pivot = vector;
 			}
 		}
-	}
+
+		//MINERSKAGG
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(AttackReaction), nameof(AttackReaction.NormalAnimation))]
+		private static void AttackReaction_NormalAnimation(AttackReaction __instance, Action onComplete)
+		{
+			Tile originTile = MapRenderer.Current.GetTileInstance(__instance.action.Origin);
+			Tile targetTile = MapRenderer.Current.GetTileInstance(__instance.action.Target);
+			GameState gameState = GameManager.GameState;
+			if (originTile.unit.state.HasAbility((UnitAbility.Type)600, gameState))
+			{
+				if (originTile && originTile.Unit && (!originTile.IsHidden || !targetTile.IsHidden))
+				{
+					//targetTile.Unit.Attack(__instance.action.Target, false, (Action)test);
+					return;
+				}
+				onComplete();
+
+				void test()
+				{
+					if (originTile && originTile.Unit && !originTile.IsHidden)
+					{
+						originTile.Damage(10);
+						originTile.RenderUnit();
+					}
+					GameManager.DelayCall((int)__instance.action.Delay, onComplete);
+				}
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(UnitDataExtensions), nameof(UnitDataExtensions.GetDefenceBonus))]
+		private static bool UnitDataExtensions_GetDefenceBonus(ref int __result, UnitState unit, GameState gameState)
+		{
+			int result = 10;
+			if (unit.HasEffect(UnitEffect.Poisoned))
+			{
+				__result = 7;
+			}
+			TileData tile = gameState.Map.GetTile(unit.coordinates);
+			if (tile == null)
+			{
+				__result = result;
+			}
+			PlayerState player;
+			gameState.TryGetPlayer(unit.owner, out player);
+			if (unit.owner != 0 && gameState.TryGetPlayer(unit.owner, out player) && player.GetDefenceBonus(tile.terrain, gameState) > 1)
+			{
+				result = 15;
+			}
+			ImprovementData data;
+			if (tile.improvement != null && gameState.GameLogicData.TryGetData(tile.improvement.type, out data))
+			{
+				if (tile.HasImprovement(ImprovementData.Type.City) && tile.owner == unit.owner && unit.HasAbility(UnitAbility.Type.Fortify, gameState))
+				{
+					result = 15;
+					if (tile.improvement.HasReward(CityReward.CityWall))
+					{
+						result = 40;
+					}
+				}
+				if (data.HasAbility(ImprovementAbility.Type.Defend) && tile.owner == unit.owner)
+				{
+					if (tile.owner == unit.owner || player.HasPeaceWith(tile.owner))
+					{
+						result = 40;
+					}
+					else
+					{
+						result = 15;
+					}
+				}
+			}
+			if (player.HasTribeAbility((TribeAbility.Type)601, gameState))
+			{
+				if (tile.owner == unit.owner || player.HasPeaceWith(tile.owner))
+				{
+					result *= 2;
+				}
+				else
+				{
+					result /= 2;
+				}
+			}
+			__result = result;
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(TileDataExtensions), nameof(TileDataExtensions.HasEmbarkImprovement))]
+		private static bool TileDataExtensions_HasEmbarkImprovement(ref bool __result, TileData tileState, GameState gameState)
+		{
+			if (tileState.improvement == null)
+			{
+                __result = false;
+			}
+			ImprovementData data;
+			if (gameState.Version < 95)
+			{
+				if (tileState.improvement.type == ImprovementData.Type.Port)
+				{
+                    __result = true;
+				}
+			}
+			else if (gameState.GameLogicData.TryGetData(tileState.improvement.type, out data) && data.HasAbility(ImprovementAbility.Type.Embark))
+			{
+                __result = true;
+			}
+            __result = false;
+			return false;
+		}
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(EmbarkAction), nameof(EmbarkAction.ExecuteDefault))]
+        private static bool EmbarkAction_ExecuteDefault(EmbarkAction __instance, GameState gameState)
+        {
+            PlayerState playerState;
+            if (gameState.TryGetPlayer(__instance.PlayerId, out playerState))
+            {
+                TileData tile = gameState.Map.GetTile(__instance.Coordinates);
+                UnitState unit = tile.unit;
+                UnitData.Type type = UnitData.Type.Transportship;
+                if (unit.HasAbility(UnitAbility.Type.Hide, gameState))
+                {
+                    type = UnitData.Type.Cloak_Boat;
+                }
+                if (unit.type == UnitData.Type.Dagger)
+                {
+                    type = UnitData.Type.Pirate;
+                }
+                if (unit.type == UnitData.Type.Giant)
+                {
+                    type = UnitData.Type.Juggernaut;
+                }
+                if (tile.HasImprovement((ImprovementData.Type)ModLoader.gldDictionary["airport"]))
+                {
+                    type = (UnitData.Type)ModLoader.gldDictionary["transportplane"];
+                }
+                UnitData unitData;
+                gameState.GameLogicData.TryGetData(type, out unitData);
+                UnitState unitState = ActionUtils.TrainUnit(gameState, playerState, tile, unitData);
+                if (!unitState.HasAbility(UnitAbility.Type.Protect, gameState))
+                {
+                    unitState.health = unit.health;
+                }
+                unitState.home = unit.home;
+                unitState.direction = unit.direction;
+                unitState.flipped = unit.flipped;
+                unitState.passengerUnit = unit;
+                unitState.effects = unit.effects;
+                unitState.attacked = true;
+                unitState.moved = true;
+                if (unitState.HasAbility(UnitAbility.Type.Stomp, gameState))
+                {
+                    ActionUtils.StompAttack(gameState, unitState, __instance.Coordinates);
+                }
+            }
+			return false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MoveAction), nameof(MoveAction.ExecuteDefault))]
+        private static void MoveAction_ExecuteDefault(MoveAction __instance, GameState gameState)
+        {
+            UnitState unitState;
+            PlayerState playerState;
+            UnitData unitData;
+            if (gameState.TryGetUnit(__instance.UnitId, out unitState) && gameState.TryGetPlayer(__instance.PlayerId, out playerState) && gameState.GameLogicData.TryGetData(unitState.type, out unitData))
+            {
+                WorldCoordinates worldCoordinates = __instance.Path[0];
+                WorldCoordinates worldCoordinates2 = __instance.Path[__instance.Path.Count - 1];
+                TileData tile = gameState.Map.GetTile(worldCoordinates2);
+                TileData tile2 = gameState.Map.GetTile(worldCoordinates);
+                unitState.moved = (unitState.moved || ((__instance.Reason != MoveAction.MoveReason.Attack || !unitState.HasAbility(UnitAbility.Type.Escape, null)) && __instance.Reason != MoveAction.MoveReason.Push));
+                tile.SetUnit(null);
+                tile2.SetUnit(unitState);
+                unitState.coordinates = worldCoordinates;
+                if (!unitData.IsAquatic() && !unitState.HasAbility(UnitAbility.Type.Fly, gameState) && tile2.HasEmbarkImprovement(gameState))
+                {
+                    gameState.ActionStack.Add(new EmbarkAction(__instance.PlayerId, worldCoordinates));
+                }
+                else if (!tile2.IsWater && unitData.IsVehicle())
+                {
+                    gameState.ActionStack.Add(new DisembarkAction(__instance.PlayerId, worldCoordinates));
+                }
+            }
+        }
+    }
 }

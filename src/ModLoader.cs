@@ -13,8 +13,9 @@ namespace PolyMod
 	internal static class ModLoader
 	{
 		private static Dictionary<int, string> _styles = new();
+        public static Dictionary<string, int> gldDictionary = new ();
 
-		internal static void Init(JObject gld)
+        internal static void Init(JObject gld)
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
@@ -87,6 +88,7 @@ namespace PolyMod
 					++idx;
 					token["idx"] = idx;
 					string id = Plugin.GetJTokenName(token);
+					gldDictionary[id] = idx;
                     switch (Plugin.GetJTokenName(token, 2))
 					{
 						case "tribeData":
