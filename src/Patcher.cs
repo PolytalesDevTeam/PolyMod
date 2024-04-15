@@ -22,30 +22,25 @@ namespace PolyMod
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(SearchFriendCodePopup), nameof(SearchFriendCodePopup.OnInputChanged))]
-		private static bool SearchFriendCodePopup_OnInputChanged(SearchFriendCodePopup __instance, string value)
+		private static bool SearchFriendCodePopup_OnInputChanged(SearchFriendCodePopup __instance)
 		{
-			if (PolymodUI.isUIActive)
+			if (UI.active)
 			{
-				PolymodUI.OnInputChanged(__instance, value);
-				return false;
+				UI.OnInputChanged(__instance);
 			}
-			return true;
+			return !UI.active;
 		}
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(SearchFriendCodePopup), nameof(SearchFriendCodePopup.OnInputDone))]
-		private static bool SearchFriendCodePopup_OnInputDone(SearchFriendCodePopup __instance, string value)
+		private static bool SearchFriendCodePopup_OnInputDone()
 		{
-			if (PolymodUI.isUIActive)
-			{
-				return false;
-			}
-			return true;
+			return !UI.active;
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
-		private static void GameManager_Update(GameManager __instance)
+		private static void GameManager_Update()
 		{
 			Plugin.Update();
 		}
@@ -277,22 +272,22 @@ namespace PolyMod
 		[HarmonyPatch(typeof(BasicPopup), nameof(BasicPopup.Update))]
 		private static void BasicPopup_Update(BasicPopup __instance)
 		{
-			if (PolymodUI.isUIActive)
+			if (UI.active)
 			{
-				__instance.rectTransform.SetWidth(PolymodUI.width);
-				__instance.rectTransform.SetHeight(PolymodUI.height);
+				__instance.rectTransform.SetWidth(UI.width);
+				__instance.rectTransform.SetHeight(UI.height);
 			}
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
-		private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance, Il2CppReferenceArray<PopupBase.PopupButtonData> buttonData)
+		private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance)
 		{
 			int num = __instance.buttons.Length;
 			for (int i = 0; i < num; i++)
 			{
 				UITextButton uitextButton = __instance.buttons[i];
-				Vector2 vector = new Vector2((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
+				Vector2 vector = new((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
 				uitextButton.rectTransform.anchorMin = vector;
 				uitextButton.rectTransform.anchorMax = vector;
 				uitextButton.rectTransform.pivot = vector;

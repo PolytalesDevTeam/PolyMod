@@ -2,7 +2,6 @@
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
 using PolytopiaBackendBase.Game;

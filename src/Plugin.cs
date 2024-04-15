@@ -12,7 +12,6 @@ namespace PolyMod
 		internal const uint MAP_MAX_SIZE = 100;
 		internal const int MAP_MAX_PLAYERS = 100;
 		internal const float CAMERA_MAXZOOM_CONSTANT = 1000;
-		//internal const float CAMERA_MINZOOM_CONSTANT = 0.5f;  not used for now until problems resolved
 		internal const int AUTOIDX_STARTS_FROM = 1000;
 		internal static readonly string BASE_PATH = Path.Combine(BepInEx.Paths.BepInExRootPath, "..");
 		internal static readonly string MODS_PATH = Path.Combine(BASE_PATH, "Mods");
@@ -27,7 +26,7 @@ namespace PolyMod
 		{
 			Harmony.CreateAndPatchAll(typeof(Patcher));
 
-        }
+		}
 
 		internal static void Start()
 		{
@@ -42,11 +41,11 @@ namespace PolyMod
 				start = true;
 			}
 
-            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !PolymodUI.isUIActive)
-            {
-				PolymodUI.Show();
-            }
-        }
+			if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !UI.active)
+			{
+				UI.Show();
+			}
+		}
 
 		internal static string GetJTokenName(JToken token, int n = 1)
 		{
