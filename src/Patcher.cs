@@ -7,6 +7,7 @@ using PolytopiaBackendBase;
 using PolytopiaBackendBase.Game;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.EnhancedTouch;
 
 namespace PolyMod
 {
@@ -111,10 +112,55 @@ namespace PolyMod
 		}
 
 		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameRules), nameof(GameRules.LoadPreset))]
+		private static bool GameRules_LoadPreset(ref GameRules __instance, GameMode gameMode)
+		{
+			if (gameMode == (GameMode)BotGame.bot)
+			{
+                __instance = new GameRules
+                {
+                    AllowMirrorPick = false,
+                    AllowTechSharing = true,
+                    AllowSpecialTribes = true,
+                    ScoreLimit = 0,
+                    TurnLimit = 0,
+                    WinByCapital = false,
+                    WinByExtermination = true,
+                    PlayerDeathCondition = GameRules.DeathCondition.Cities
+                };
+                return false;
+			}
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameManager), nameof(GameManager.OnGameReady))]
+		private static void GameManager_OnGameReady()
+		{
+			if (GameManager.GameState.Settings.RulesGameMode == (GameMode)BotGame.bot)
+			{
+				GameManager.instance.OnFinishedProcessingActions();
+				Log.Info("Made move");
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(StartMatchReaction), nameof(StartMatchReaction.DoWelcomeCinematic))]
+		private static bool StartMatchReaction_DoWelcomeCinematic(ref StartMatchReaction __instance, Action onComplete)
+		{
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			__instance.StartGame(onComplete);
+			return false;
+		}
+
+		[HarmonyPrefix]
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.IsPlayerLocal))]
 		public static bool ClientBase_IsPlayerLocal(ref bool __result, byte playerId)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -126,7 +172,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.IsPlayerViewing))]
 		public static bool GameManager_IsPlayerViewing(ref bool __result)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode == (GameMode)BotGame.bot && BotGame.unview)
+			if (GameManager.GameState.Settings.RulesGameMode == (GameMode)BotGame.bot && BotGame.unview)
 			{
 				__result = false;
 				return false;
@@ -138,7 +184,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
 		public static bool WipePlayerReaction_Execute()
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -150,7 +196,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
 		public static void WipePlayerReaction_Execute_Postfix()
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return;
 			}
@@ -161,7 +207,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
 		public static bool StartTurnReaction_Execute()
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -180,10 +226,33 @@ namespace PolyMod
 		}
 
 		[HarmonyPrefix]
+		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.DoStartTurnNotification))]
+		public static bool StartTurnReaction_DoStartTurnNotification()
+		{
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(HudScreen), nameof(HudScreen.OnMatchStart))]
+		public static bool HudScreen_OnMatchStart(ref HudScreen __instance)
+		{
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
+			{
+				return true;
+			}
+			UIManager.Instance.ShowScreen(UIConstants.Screens.Hud, false);
+			return false;
+		}
+
+		[HarmonyPrefix]
 		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.Refresh))]
 		public static bool MapRenderer_Refresh()
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -199,7 +268,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
 		public static bool TaskCompletedReaction_Execute(ref TaskCompletedReaction __instance, ref byte __state)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -212,7 +281,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
 		public static void TaskCompletedReaction_Execute_Postfix(ref TaskCompletedReaction __instance, ref byte __state)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return;
 			}
@@ -230,7 +299,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
 		public static bool Patch_Execute(ReactionBase __instance)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -249,7 +318,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
 		public static void Patch_Execute_Post()
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				if (BotGame.unview)
 				{
@@ -264,7 +333,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientActionManager), nameof(ClientActionManager.Update))]
 		public static void Patch_Update()
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				if (BotGame.unview)
 				{
@@ -288,7 +357,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.CreateSession))]
 		public static void ClientBase_CreateSession(ref Il2CppSystem.Threading.Tasks.Task<CreateSessionResult> __result, ref ClientBase __instance, GameSettings settings, List<PlayerState> players)
 		{
-			if (__instance.clientType != ClientBase.ClientType.Local || GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (__instance.clientType != ClientBase.ClientType.Local || GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return;
 			}
@@ -304,7 +373,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.GetCurrentLocalPlayer))]
 		public static bool ClientBase_GetCurrentLocalPlayer(ref PlayerState __result, ref ClientBase __instance)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
@@ -316,7 +385,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(AI), nameof(AI.GetGameProgress))]
 		public static bool AI_GetGameProgress(GameState gameState, PlayerState winningPlayer, ref float __result, ref AI __instance)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
