@@ -104,17 +104,21 @@ namespace PolyMod
 				{
 					case TerrainData.Type.Water:
 						tile.altitude = -1;
+						tile.shoreLines = TileData.ShorelineFlag.None;
 						break;
 					case TerrainData.Type.Ocean:
 					case TerrainData.Type.Ice:
 						tile.altitude = -2;
+						tile.shoreLines = TileData.ShorelineFlag.None;
 						break;
 					case TerrainData.Type.Field:
 					case TerrainData.Type.Forest:
 						tile.altitude = 1;
+						tile.shoreLines = TileData.ShorelineFlag.None;
 						break;
 					case TerrainData.Type.Mountain:
 						tile.altitude = 2;
+						tile.shoreLines = TileData.ShorelineFlag.None;
 						break;
 				}
 

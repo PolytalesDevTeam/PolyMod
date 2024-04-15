@@ -5,6 +5,46 @@ namespace PolyMod
 {
 	internal static class ReplayResumer
 	{
+		internal static ClientBase? replayClient;
+		internal static string nameStart = "(From move ";
+		internal static string nameEnd = ")";
+
+		public static void BackToReplay()
+		{
+			ClientBase passAndPlayClient = GameManager.Client;
+			if (!passAndPlayClient.GameState.Settings.GameName.StartsWith(nameStart))
+			{
+				Log.Warning("{0} Command used outside of resumed game, name is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameName });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			if (passAndPlayClient.GameState.Settings.GameType != GameType.PassAndPlay)
+			{
+				Log.Warning("{0} Command used outside of resumed game, type is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameType.ToString() });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			if (replayClient == null)
+			{
+				Log.Warning("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			if (replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName[^36..])
+			{
+				Log.Warning("{0} Replay client game id does not match resumed game id", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				GameManager.instance.SetLoadingGame(false);
+				return;
+			}
+			Log.Info("{0} Loading replay {1} Game", new Il2CppSystem.Object[]
+			{
+				"<color=#FFFFFF>[GameManager]</color>",
+				replayClient.initialGameState.Settings.BaseGameMode.ToString()
+			});
+			GameManager.instance.SetLoadingGame(true);
+			GameManager.instance.client = replayClient;
+			GameManager.instance.LoadLevel();
+		}
 		public static void Resume()
 		{
 			ClientBase replayClient = GameManager.Client;
@@ -14,7 +54,6 @@ namespace PolyMod
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-
 			GameManager.instance.SetLoadingGame(true);
 			Log.Info("{0} Loading new Hotseat {1} Game from replay", new Il2CppSystem.Object[]
 			{
@@ -34,15 +73,11 @@ namespace PolyMod
 			if (taskAwaiter.GetResult())
 			{
 				GameManager.instance.LoadLevel();
-				PopupManager.GetBasicPopup(new PopupManager.BasicPopupData
-				{
-					header = "Resuming from Replay",
-					description = "The game has been turned from a replay into a hotseat game. You can now continue playing.",
-					buttonData = new PopupBase.PopupButtonData[]
-				{
-					new PopupBase.PopupButtonData("buttons.ok", PopupBase.PopupButtonData.States.Selected, null, -1, true, null)
-				}
-				}).Show();
+				BasicPopup resumePopup = PopupManager.GetBasicPopup();
+				resumePopup.Header = "Resuming from Replay";
+				resumePopup.Description = "The game has been turned from a replay into a hotseat game. You can now continue playing.";
+				resumePopup.buttonData = new PopupBase.PopupButtonData[] { new(Localization.Get("buttons.ok"), PopupBase.PopupButtonData.States.Selected, null, -1, true, null) };
+				resumePopup.Show();
 			}
 		}
 
@@ -65,23 +100,19 @@ namespace PolyMod
 
 		public static Il2CppSystem.Threading.Tasks.Task<bool> TransformClient(ClientBase replayClient, HotseatClient hotseatClient)
 		{
+			ReplayResumer.replayClient = replayClient;
 			GameState initialGameState = replayClient.initialGameState;
-			GameState lastTurnGameState;
-			GameState currentGameState;
-			GameState otherCurrentGameState;
 			initialGameState.Settings.GameType = GameType.PassAndPlay;
+			initialGameState.Settings.gameName = nameStart + replayClient.GetLastSeenCommand().ToString() + nameEnd + initialGameState.Settings.gameName + replayClient.gameId.ToString();
 			byte[] array = SerializationHelpers.ToByteArray(initialGameState, replayClient.initialGameState.Version);
-			SerializationHelpers.FromByteArray(array, out currentGameState);
-			SerializationHelpers.FromByteArray(array, out lastTurnGameState);
-			SerializationHelpers.FromByteArray(array, out otherCurrentGameState);
+			SerializationHelpers.FromByteArray(array, out GameState currentGameState);
+			SerializationHelpers.FromByteArray(array, out GameState _);
+			SerializationHelpers.FromByteArray(array, out GameState otherCurrentGameState);
 			for (int i = 0; i < replayClient.GetLastSeenCommand(); i++)
 			{
 				otherCurrentGameState.CommandStack.Add(replayClient.currentGameState.CommandStack[i]);
 			}
-			Il2CppSystem.Collections.Generic.List<CommandBase> executedCommands = new Il2CppSystem.Collections.Generic.List<CommandBase>();
-			Il2CppSystem.Collections.Generic.List<CommandResultEvent> events = new Il2CppSystem.Collections.Generic.List<CommandResultEvent>();
-			string error;
-			ExecuteCommands(currentGameState, otherCurrentGameState.CommandStack, out executedCommands, out events, out error);
+			ExecuteCommands(currentGameState, otherCurrentGameState.CommandStack, out _, out _, out string? error);
 			if (error != null)
 			{
 				Log.Error("{0} Failed to execute commands: {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", error });
@@ -97,14 +128,18 @@ namespace PolyMod
 			hotseatClient.currentGameState = currentGameState;
 			hotseatClient.lastTurnGameState = initialGameState;
 			hotseatClient.lastSeenCommands = new ushort[replayClient.currentGameState.PlayerStates.Count];
+			for (int j = 0; j < replayClient.currentGameState.PlayerStates.Count; j++)
+			{
+				hotseatClient.lastSeenCommands[j] = (ushort)replayClient.GetLastSeenCommand();
+			}
 			hotseatClient.currentLocalPlayerIndex = hotseatClient.currentGameState.CurrentPlayerIndex;
 			hotseatClient.hasInitializedSaveData = true;
 			hotseatClient.UpdateGameStateImmediate(hotseatClient.currentGameState, StateUpdateReason.GameJoined);
 			hotseatClient.PrepareSession();
-			return Il2CppSystem.Threading.Tasks.Task.FromResult<bool>(true);
+			return Il2CppSystem.Threading.Tasks.Task.FromResult(true);
 		}
 
-		private static bool ExecuteCommands(GameState gameState, Il2CppSystem.Collections.Generic.List<CommandBase> commands, out Il2CppSystem.Collections.Generic.List<CommandBase> executedCommands, out Il2CppSystem.Collections.Generic.List<CommandResultEvent> events, out string error)
+		private static bool ExecuteCommands(GameState gameState, Il2CppSystem.Collections.Generic.List<CommandBase> commands, out Il2CppSystem.Collections.Generic.List<CommandBase> executedCommands, out Il2CppSystem.Collections.Generic.List<CommandResultEvent> events, out string? error)
 		{
 			executedCommands = new Il2CppSystem.Collections.Generic.List<CommandBase>();
 			events = new Il2CppSystem.Collections.Generic.List<CommandResultEvent>();
@@ -112,7 +147,7 @@ namespace PolyMod
 			byte currentPlayer = gameState.CurrentPlayer;
 			try
 			{
-				ActionManager actionManager = new ActionManager(gameState);
+				ActionManager actionManager = new(gameState);
 				foreach (CommandBase commandBase in commands)
 				{
 					GameState.State currentState = gameState.CurrentState;
@@ -122,17 +157,14 @@ namespace PolyMod
 						return false;
 					}
 					executedCommands.Add(commandBase);
-					CommandResultEvent commandResultEvent;
-					if (GameStateUtils.RegisterCommandResultEvent(gameState, currentState, currentTurn, commandBase, out commandResultEvent, false))
+					if (GameStateUtils.RegisterCommandResultEvent(gameState, currentState, currentTurn, commandBase, out CommandResultEvent commandResultEvent, false))
 					{
 						events.Add(commandResultEvent);
 					}
 				}
-				PlayerState playerState;
-				while (gameState.TryGetPlayer(gameState.CurrentPlayer, out playerState) && playerState.AutoPlay && gameState.CurrentState != GameState.State.Ended)
+				while (gameState.TryGetPlayer(gameState.CurrentPlayer, out PlayerState playerState) && playerState.AutoPlay && gameState.CurrentState != GameState.State.Ended)
 				{
-					CommandBase move;
-					if (!CommandTriggerUtils.TryGetTriggerCommand(gameState, out move))
+					if (!CommandTriggerUtils.TryGetTriggerCommand(gameState, out CommandBase move))
 					{
 						move = AI.GetMove(gameState, playerState, CommandType.None);
 					}
@@ -143,8 +175,7 @@ namespace PolyMod
 						throw new System.Exception(string.Format("AI Failed to perform command: {0} with error {1})", move.ToString(), error));
 					}
 					executedCommands.Add(move);
-					CommandResultEvent commandResultEvent2;
-					if (GameStateUtils.RegisterCommandResultEvent(gameState, currentState2, currentTurn2, move, out commandResultEvent2, playerState.Id == currentPlayer))
+					if (GameStateUtils.RegisterCommandResultEvent(gameState, currentState2, currentTurn2, move, out CommandResultEvent commandResultEvent2, playerState.Id == currentPlayer))
 					{
 						events.Add(commandResultEvent2);
 					}
