@@ -31,6 +31,7 @@ namespace PolyMod
 		internal static void Start()
 		{
 			Directory.CreateDirectory(MAPS_PATH);
+			BotGame.addBotGamemode();
 		}
 
 		internal static void Update()
