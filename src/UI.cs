@@ -11,6 +11,7 @@ namespace PolyMod
 		internal static int width;
 		internal static int height = 200;
 		internal static int inputValue = 0;
+		internal const string header = "POLYMOD";
 
 		public static void Show()
 		{
@@ -19,7 +20,7 @@ namespace PolyMod
 
 			SearchFriendCodePopup polymodPopup = PopupManager.GetSearchFriendCodePopup();
 
-			polymodPopup.Header = "PolyMod";
+			polymodPopup.Header = header;
 			polymodPopup.Description = "";
 
 			polymodPopup.buttonData = CreatePopupButtonData();
@@ -80,21 +81,21 @@ namespace PolyMod
 					GameManager.GameState.Map.Tiles[i].SetExplored(GameManager.LocalPlayer.Id, true);
 				}
 				MapRenderer.Current.Refresh(false);
-				NotificationManager.Notify("Map has been revealed.", "POLYMOD", null, null);
+				NotificationManager.Notify("Map has been revealed.", header, null, null);
 				active = false;
 			}
 
 			void OnGetStarsButtonClicked(int buttonId, BaseEventData eventData)
 			{
 				GameManager.LocalPlayer.Currency += inputValue;
-				NotificationManager.Notify($"{inputValue} stars has been added to player's currency amount.", "POLYMOD", null, null);
+				NotificationManager.Notify($"{inputValue} stars has been added to player's currency amount.", header, null, null);
 				active = false;
 			}
 
 			void OnResumeButtonClicked(int buttonId, BaseEventData eventData)
 			{
 				ReplayResumer.Resume();
-				NotificationManager.Notify("Replay had been resumed.", "POLYMOD", null, null);
+				NotificationManager.Notify("Replay had been resumed.", header, null, null);
 				active = false;
 			}
 
@@ -103,11 +104,11 @@ namespace PolyMod
 				if (inputValue >= 0)
 				{
 					Plugin.version = inputValue;
-					NotificationManager.Notify($"Changed version to {Plugin.version}.", "POLYMOD", null, null);
+					NotificationManager.Notify($"Changed version to {Plugin.version}.", header, null, null);
 				}
 				else
 				{
-					NotificationManager.Notify("Cant set Game Version lower than 0.", "POLYMOD", null, null);
+					NotificationManager.Notify("Cant set Game Version lower than 0.", header, null, null);
 				}
 				active = false;
 			}
