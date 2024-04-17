@@ -366,7 +366,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.GetCurrentLocalPlayer))]
 		public static bool ClientBase_GetCurrentLocalPlayer(ref PlayerState __result, ref ClientBase __instance)
 		{
-			if (GameManager.GameState != null && GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
+			if (GameManager.GameState == null || GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
 				return true;
 			}
