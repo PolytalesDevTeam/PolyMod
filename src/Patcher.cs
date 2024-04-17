@@ -1,13 +1,9 @@
-﻿using System.Diagnostics;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
-using PolytopiaBackendBase;
 using PolytopiaBackendBase.Game;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.EnhancedTouch;
 
 namespace PolyMod
 {
@@ -54,7 +50,7 @@ namespace PolyMod
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.GetCustomGameModeIndexFromSettings))]
-		private static bool GameSetupScreen_GetCustomGameModeIndexFromSettings(ref GameSetupScreen __instance, ref int __result)
+		private static bool GameSetupScreen_GetCustomGameModeIndexFromSettings(ref int __result)
 		{
 			if (GameManager.PreliminaryGameSettings.RulesGameMode == (GameMode)BotGame.bot)
 			{
@@ -116,18 +112,18 @@ namespace PolyMod
 		{
 			if (gameMode == (GameMode)BotGame.bot)
 			{
-                __instance = new GameRules
-                {
-                    AllowMirrorPick = false,
-                    AllowTechSharing = true,
-                    AllowSpecialTribes = true,
-                    ScoreLimit = 0,
-                    TurnLimit = 0,
-                    WinByCapital = false,
-                    WinByExtermination = true,
-                    PlayerDeathCondition = GameRules.DeathCondition.Cities
-                };
-                return false;
+				__instance = new GameRules
+				{
+					AllowMirrorPick = false,
+					AllowTechSharing = true,
+					AllowSpecialTribes = true,
+					ScoreLimit = 0,
+					TurnLimit = 0,
+					WinByCapital = false,
+					WinByExtermination = true,
+					PlayerDeathCondition = GameRules.DeathCondition.Cities
+				};
+				return false;
 			}
 			return true;
 		}
@@ -157,7 +153,7 @@ namespace PolyMod
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.IsPlayerLocal))]
-		public static bool ClientBase_IsPlayerLocal(ref bool __result, byte playerId)
+		public static bool ClientBase_IsPlayerLocal(ref bool __result)
 		{
 			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
@@ -215,12 +211,11 @@ namespace PolyMod
 			{
 				return true;
 			}
-			// Replace the client (temporarily)
 			GameManager.instance.client = new ReplayClient();
 			GameManager.Client.currentGameState = BotGame.localClient.GameState;
 			GameManager.Client.CreateOrResetActionManager(BotGame.localClient.lastSeenCommand);
 			GameManager.Client.ActionManager.isRecapping = true;
-			LevelManager.GetClientInteraction().ClearSelection(); // Clear selection circles.
+			LevelManager.GetClientInteraction().ClearSelection();
 			return true;
 		}
 
@@ -237,7 +232,7 @@ namespace PolyMod
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(HudScreen), nameof(HudScreen.OnMatchStart))]
-		public static bool HudScreen_OnMatchStart(ref HudScreen __instance)
+		public static bool HudScreen_OnMatchStart()
 		{
 			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
@@ -256,7 +251,7 @@ namespace PolyMod
 				return true;
 			}
 			if (BotGame.localClient != null)
-			{ // Repair the client as soon as possible
+			{
 				GameManager.instance.client = BotGame.localClient;
 				BotGame.localClient = null;
 			}
@@ -287,7 +282,6 @@ namespace PolyMod
 			__instance.action.PlayerId = __state;
 		}
 
-		// Patch multiple classes with the same method
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
 		[HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
@@ -296,7 +290,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(EstablishEmbassyReaction), nameof(EstablishEmbassyReaction.Execute))]
 		[HarmonyPatch(typeof(DestroyEmbassyReaction), nameof(DestroyEmbassyReaction.Execute))]
 		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
-		public static bool Patch_Execute(ReactionBase __instance)
+		public static bool Patch_Execute()
 		{
 			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
@@ -354,7 +348,7 @@ namespace PolyMod
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.CreateSession))]
-		public static void ClientBase_CreateSession(ref Il2CppSystem.Threading.Tasks.Task<CreateSessionResult> __result, ref ClientBase __instance, GameSettings settings, List<PlayerState> players)
+		public static void ClientBase_CreateSession(ref ClientBase __instance)
 		{
 			if (__instance.clientType != ClientBase.ClientType.Local || GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
@@ -382,7 +376,7 @@ namespace PolyMod
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(AI), nameof(AI.GetGameProgress))]
-		public static bool AI_GetGameProgress(GameState gameState, PlayerState winningPlayer, ref float __result, ref AI __instance)
+		public static bool AI_GetGameProgress(GameState gameState, PlayerState winningPlayer, ref float __result)
 		{
 			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
@@ -396,7 +390,7 @@ namespace PolyMod
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.LoadLevel))]
-		public static void GameManager_LoadLevel(ref GameManager __instance)
+		public static void GameManager_LoadLevel()
 		{
 			GameManager.debugAutoPlayLocalPlayer = GameManager.Client.GameState.Settings.RulesGameMode == (GameMode)BotGame.bot;
 		}
@@ -498,7 +492,6 @@ namespace PolyMod
 		private static void CameraController_Awake()
 		{
 			CameraController.Instance.maxZoom = Plugin.CAMERA_MAXZOOM_CONSTANT;
-			//CameraController.Instance.minZoom = Plugin.CAMERA_MINZOOM_CONSTANT;
 			CameraController.Instance.techViewBounds = new(
 				new(Plugin.CAMERA_MAXZOOM_CONSTANT, Plugin.CAMERA_MAXZOOM_CONSTANT), CameraController.Instance.techViewBounds.size
 			);

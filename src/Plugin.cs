@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Logging;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -18,20 +19,22 @@ namespace PolyMod
 		internal static readonly string MAPS_PATH = Path.Combine(BASE_PATH, "Maps");
 		internal static readonly JsonMergeSettings GLD_MERGE_SETTINGS = new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge };
 
+#pragma warning disable CS8618
+		internal static ManualLogSource logger;
+#pragma warning restore CS8618
 		internal static int version = -1;
-
 		internal static bool start = false;
 
 		public override void Load()
 		{
 			Harmony.CreateAndPatchAll(typeof(Patcher));
-
+			logger = Log;
 		}
 
 		internal static void Start()
 		{
 			Directory.CreateDirectory(MAPS_PATH);
-			BotGame.addBotGamemode();
+			BotGame.AddBotGamemode();
 		}
 
 		internal static void Update()
