@@ -1,4 +1,5 @@
 using Il2CppSystem.Runtime.CompilerServices;
+using Newtonsoft.Json.Utilities;
 using PolytopiaBackendBase.Game;
 
 namespace PolyMod
@@ -14,33 +15,33 @@ namespace PolyMod
 			ClientBase passAndPlayClient = GameManager.Client;
 			if (!passAndPlayClient.GameState.Settings.GameName.StartsWith(nameStart))
 			{
-				Log.Warning("{0} Command used outside of resumed game, name is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameName });
+				Plugin.logger.LogWarning(string.Format("{0} Command used outside of resumed game, name is {1}", "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameName));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
 			if (passAndPlayClient.GameState.Settings.GameType != GameType.PassAndPlay)
 			{
-				Log.Warning("{0} Command used outside of resumed game, type is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameType.ToString() });
+				Plugin.logger.LogWarning(string.Format("{0} Command used outside of resumed game, type is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", passAndPlayClient.GameState.Settings.GameType.ToString() }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
 			if (replayClient == null)
 			{
-				Log.Warning("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				Plugin.logger.LogWarning(string.Format("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
 			if (replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName[^36..])
 			{
-				Log.Warning("{0} Replay client game id does not match resumed game id", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				Plugin.logger.LogWarning(string.Format("{0} Replay client game id does not match resumed game id", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-			Log.Info("{0} Loading replay {1} Game", new Il2CppSystem.Object[]
+			Plugin.logger.LogInfo(string.Format("{0} Loading replay {1} Game", new Il2CppSystem.Object[]
 			{
 				"<color=#FFFFFF>[GameManager]</color>",
 				replayClient.initialGameState.Settings.BaseGameMode.ToString()
-			});
+			}));
 			GameManager.instance.SetLoadingGame(true);
 			GameManager.instance.client = replayClient;
 			GameManager.instance.LoadLevel();
@@ -50,25 +51,25 @@ namespace PolyMod
 			ClientBase replayClient = GameManager.Client;
 			if (!replayClient.IsReplay)
 			{
-				Log.Warning("{0} Command used outside of replay game, client is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", GameManager.Client.GetType().ToString() });
+				Plugin.logger.LogWarning(string.Format("{0} Command used outside of replay game, client is {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", GameManager.Client.GetType().ToString() }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
 			GameManager.instance.SetLoadingGame(true);
-			Log.Info("{0} Loading new Hotseat {1} Game from replay", new Il2CppSystem.Object[]
+			Plugin.logger.LogInfo(string.Format("{0} Loading new Hotseat {1} Game from replay", new Il2CppSystem.Object[]
 			{
 				"<color=#FFFFFF>[GameManager]</color>",
 				GameManager.instance.settings.BaseGameMode.ToString()
-			});
+			}));
 
 			HotseatClient hotseatClient = SetHotseatClient();
 			if (hotseatClient == null)
 			{
-				Log.Warning("{0} Failed to create Hotseat game", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+				Plugin.logger.LogWarning(string.Format("{0} Failed to create Hotseat game", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-			Log.Info("{0} Created new Hotseat game", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+			Plugin.logger.LogInfo(string.Format("{0} Created new Hotseat game", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 			TaskAwaiter<bool> taskAwaiter = TransformClient(replayClient, hotseatClient).GetAwaiter();
 			if (taskAwaiter.GetResult())
 			{
@@ -84,7 +85,7 @@ namespace PolyMod
 		public static HotseatClient SetHotseatClient()
 		{
 			GameManager.instance.settings.GameType = GameType.PassAndPlay;
-			Log.Info("{0} Setting up hotseat client...", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" });
+			Plugin.logger.LogInfo(string.Format("{0} Setting up hotseat client...", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 			HotseatClient hotseatClient = new()
 			{
 				OnConnected = new Action(GameManager.instance.OnLocalClientConnected),
@@ -115,12 +116,12 @@ namespace PolyMod
 			ExecuteCommands(currentGameState, otherCurrentGameState.CommandStack, out _, out _, out string? error);
 			if (error != null)
 			{
-				Log.Error("{0} Failed to execute commands: {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", error });
+				Plugin.logger.LogError(string.Format("{0} Failed to execute commands: {1}", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>", error }));
 				return Il2CppSystem.Threading.Tasks.Task.FromResult<bool>(false);
 			}
-			Log.Info("{0} Transforming replay session...", new Il2CppSystem.Object[]
+			Plugin.logger.LogInfo(string.Format("{0} Transforming replay session...", new Il2CppSystem.Object[]
 				{HotseatClient.LOG_PREFIX,
-			});
+			}));
 			hotseatClient.Reset();
 			hotseatClient.gameId = Il2CppSystem.Guid.NewGuid();
 			hotseatClient.SetSavedSeenCommands(new ushort[replayClient.currentGameState.PlayerStates.Count]);
