@@ -386,15 +386,16 @@ namespace PolyMod
 			GameManager.debugAutoPlayLocalPlayer = GameManager.Client.GameState.Settings.RulesGameMode == (GameMode)BotGame.bot;
 		}
 
-		[HarmonyPostfix]
+		[HarmonyPrefix]
 		[HarmonyPatch(typeof(VersionManager), nameof(VersionManager.GameVersion), MethodType.Getter)]
-		private static void VersionManager_GameVersion(ref int __result)
+		private static bool VersionManager_GameVersion(ref int __result)
 		{
 			if (Plugin.version == -1)
 			{
-				Plugin.version = 104;
+				return true;
 			}
 			__result = Plugin.version;
+			return false;
 		}
 
 		[HarmonyPrefix]
