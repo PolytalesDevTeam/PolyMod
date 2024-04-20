@@ -91,10 +91,9 @@ namespace PolyMod
 			{
 				return false;
 			}
-			bool flag = GameManager.PreliminaryGameSettings.BaseGameMode == GameMode.Custom;
-			bool flag2 = flag && GameManager.PreliminaryGameSettings.RulesGameMode != GameMode.Domination && GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot;
+			bool flag2 = GameManager.PreliminaryGameSettings.RulesGameMode != GameMode.Domination && GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot;
 			bool flag4 = GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)BotGame.bot;
-			int num = flag ? MapDataExtensions.GetMaximumOpponentCountForMapSize(GameManager.PreliminaryGameSettings.MapSize, GameManager.PreliminaryGameSettings.mapPreset) : GameManager.GetMaxOpponents();
+			int num = MapDataExtensions.GetMaximumOpponentCountForMapSize(GameManager.PreliminaryGameSettings.MapSize, GameManager.PreliminaryGameSettings.mapPreset);
 			for (int i = 0; i < __instance.opponentList.items.Length; i++)
 			{
 				bool flag3 = (flag2 && i == 0) || (i > 0 && i <= num);
@@ -328,14 +327,6 @@ namespace PolyMod
 		{
 			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)BotGame.bot)
 			{
-				if (BotGame.unview)
-				{
-					DebugConsole.Write("Uh, what!?");
-				}
-				if (BotGame.localClient != null)
-				{
-					DebugConsole.Write("Sorry, what!?");
-				}
 				return;
 			}
 			if (BotGame.localClient != null)
