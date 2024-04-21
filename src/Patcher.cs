@@ -554,6 +554,41 @@ namespace PolyMod
 			__result = sprites.ToArray();
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetAddress))]
+		public static void SpriteData_GetAddress(ref SpriteAddress __result, PickerType pickerType, string skinID)
+		{
+			switch (pickerType)
+			{
+			case PickerType.Head:
+				__result = SpriteData.GetHeadSpriteAddress(skinID);
+				break;
+			case PickerType.Unit:
+				__result = new SpriteAddress("Units", skinID);
+				break;
+			case PickerType.TerrainFeature:
+				__result = new SpriteAddress("TerrainFeatures", skinID);
+				break;
+			case PickerType.Roof:
+				__result = new SpriteAddress("Units", "roof_" + skinID);
+				break;
+			case PickerType.PolytaurHead:
+				__result = new SpriteAddress("Units", "polytaur_2_" + skinID);
+				break;
+			case PickerType.Animal:
+				__result = SpriteData.GetResourceSpriteAddress(ResourceData.Type.Game, skinID);
+				break;
+			case PickerType.Fruit:
+				__result = SpriteData.GetResourceSpriteAddress(ResourceData.Type.Fruit, skinID);
+				break;
+			case PickerType.Forest:
+				__result = SpriteData.GetTileSpriteAddress(Polytopia.Data.TerrainData.Type.Forest, skinID);
+				break;
+			case PickerType.Mountain:
+				__result = SpriteData.GetTileSpriteAddress(Polytopia.Data.TerrainData.Type.Mountain, skinID);
+				break;
+			}
+        }
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
