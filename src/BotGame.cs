@@ -8,7 +8,7 @@ namespace PolyMod
 		public static bool unview = false;
 		public static LocalClient? localClient = null;
 
-		public static void AddBotGamemode()
+		public static void Init()
 		{
 			bot = Enum.GetValues(typeof(GameMode)).Length;
 			EnumCache<GameMode>.AddMapping("Bot", (GameMode)bot);

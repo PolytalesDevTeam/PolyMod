@@ -32,7 +32,7 @@ namespace PolyMod
 					}
 					catch
 					{
-						Log.Warning(modname + " was not loaded (JSON error?)");
+						Plugin.logger.LogError(modname + " gld patch parse error!");
 						continue;
 					}
 				}
