@@ -28,7 +28,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameModeUtils), nameof(GameModeUtils.GetTitle))]
 		private static bool GameModeUtils_GetTitle(GameMode gameMode, ref string __result)
 		{
-			if (gameMode == (GameMode)_mode)
+			if (IsBotGame(gameMode))
 			{
 				__result = "gamemode.bot";
 				return false;
@@ -40,7 +40,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameModeUtils), nameof(GameModeUtils.GetDescription))]
 		private static bool GameModeUtils_GetDescription(GameMode gameMode, ref string __result)
 		{
-			if (gameMode == (GameMode)_mode)
+			if (IsBotGame(gameMode))
 			{
 				__result = "gamemode.bot.description";
 				return false;
@@ -52,7 +52,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.GetCustomGameModeIndexFromSettings))]
 		private static bool GameSetupScreen_GetCustomGameModeIndexFromSettings(ref int __result)
 		{
-			if (GameManager.PreliminaryGameSettings.RulesGameMode == (GameMode)_mode)
+			if (IsBotGame(GameManager.PreliminaryGameSettings.RulesGameMode))
 			{
 				__result = 3;
 				return false;
@@ -91,8 +91,8 @@ namespace PolyMod
 			{
 				return false;
 			}
-			bool flag2 = GameManager.PreliminaryGameSettings.RulesGameMode != GameMode.Domination && GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)_mode;
-			bool flag4 = GameManager.PreliminaryGameSettings.RulesGameMode != (GameMode)_mode;
+			bool flag2 = GameManager.PreliminaryGameSettings.RulesGameMode != GameMode.Domination && !IsBotGame(GameManager.PreliminaryGameSettings.RulesGameMode);
+			bool flag4 = !IsBotGame(GameManager.PreliminaryGameSettings.RulesGameMode);
 			int num = MapDataExtensions.GetMaximumOpponentCountForMapSize(GameManager.PreliminaryGameSettings.MapSize, GameManager.PreliminaryGameSettings.mapPreset);
 			for (int i = 0; i < __instance.opponentList.items.Length; i++)
 			{
@@ -109,7 +109,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameRules), nameof(GameRules.LoadPreset))]
 		private static bool GameRules_LoadPreset(ref GameRules __instance, GameMode gameMode)
 		{
-			if (gameMode == (GameMode)_mode)
+			if (IsBotGame(gameMode))
 			{
 				__instance = new GameRules
 				{
@@ -131,7 +131,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.OnGameReady))]
 		private static void GameManager_OnGameReady()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode == (GameMode)_mode)
+			if (IsBotGame())
 			{
 				GameManager.instance.OnFinishedProcessingActions();
 				Log.Info("Made move");
@@ -142,7 +142,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(StartMatchReaction), nameof(StartMatchReaction.DoWelcomeCinematic))]
 		private static bool StartMatchReaction_DoWelcomeCinematic(ref StartMatchReaction __instance, Action onComplete)
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -154,7 +154,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.IsPlayerLocal))]
 		public static bool ClientBase_IsPlayerLocal(ref bool __result)
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -166,7 +166,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.IsPlayerViewing))]
 		public static bool GameManager_IsPlayerViewing(ref bool __result)
 		{
-			if (GameManager.GameState.Settings.RulesGameMode == (GameMode)_mode && _unview)
+			if (IsBotGame() && _unview)
 			{
 				__result = false;
 				return false;
@@ -178,7 +178,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
 		public static bool WipePlayerReaction_Execute()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -190,7 +190,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
 		public static void WipePlayerReaction_Execute_Postfix()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return;
 			}
@@ -201,7 +201,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
 		public static bool StartTurnReaction_Execute()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -222,7 +222,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.DoStartTurnNotification))]
 		public static bool StartTurnReaction_DoStartTurnNotification()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -233,7 +233,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(HudScreen), nameof(HudScreen.OnMatchStart))]
 		public static bool HudScreen_OnMatchStart()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -245,7 +245,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.Refresh))]
 		public static bool MapRenderer_Refresh()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -261,7 +261,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
 		public static bool TaskCompletedReaction_Execute(ref TaskCompletedReaction __instance, ref byte __state)
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -274,7 +274,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
 		public static void TaskCompletedReaction_Execute_Postfix(ref TaskCompletedReaction __instance, ref byte __state)
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return;
 			}
@@ -291,7 +291,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
 		public static bool Patch_Execute()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -310,7 +310,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
 		public static void Patch_Execute_Post()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				if (_unview)
 				{
@@ -325,7 +325,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientActionManager), nameof(ClientActionManager.Update))]
 		public static void Patch_Update()
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return;
 			}
@@ -341,7 +341,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.CreateSession))]
 		public static void ClientBase_CreateSession(ref ClientBase __instance)
 		{
-			if (__instance.clientType != ClientBase.ClientType.Local || GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (__instance.clientType != ClientBase.ClientType.Local || !IsBotGame())
 			{
 				return;
 			}
@@ -357,7 +357,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(ClientBase), nameof(ClientBase.GetCurrentLocalPlayer))]
 		public static bool ClientBase_GetCurrentLocalPlayer(ref PlayerState __result, ref ClientBase __instance)
 		{
-			if (GameManager.GameState == null || GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (GameManager.GameState == null || !IsBotGame())
 			{
 				return true;
 			}
@@ -369,7 +369,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(AI), nameof(AI.GetGameProgress))]
 		public static bool AI_GetGameProgress(GameState gameState, PlayerState winningPlayer, ref float __result)
 		{
-			if (GameManager.GameState.Settings.RulesGameMode != (GameMode)_mode)
+			if (!IsBotGame())
 			{
 				return true;
 			}
@@ -383,13 +383,28 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.LoadLevel))]
 		public static void GameManager_LoadLevel()
 		{
-			GameManager.debugAutoPlayLocalPlayer = GameManager.Client.GameState.Settings.RulesGameMode == (GameMode)_mode;
+			GameManager.debugAutoPlayLocalPlayer = IsBotGame();
 		}
 
 		public static void Init()
 		{
 			_mode = Enum.GetValues(typeof(GameMode)).Length;
 			EnumCache<GameMode>.AddMapping("Bot", (GameMode)_mode);
+		}
+
+		public static bool IsBotGame(GameMode gameMode)
+		{
+			return gameMode == (GameMode)_mode;
+		}
+
+		public static bool IsBotGame(GameState gameState)
+		{
+			return IsBotGame(gameState.Settings.RulesGameMode);
+		}
+
+		public static bool IsBotGame()
+		{
+			return IsBotGame(GameManager.GameState);
 		}
 	}
 }
