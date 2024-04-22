@@ -1,4 +1,5 @@
 ﻿using Cpp2IL.Core.Extensions;
+using HarmonyLib;
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
@@ -12,9 +13,146 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
-		private static Dictionary<int, string> _styles = new();
+		private static readonly Dictionary<int, string> _styles = new();
 
-		internal static void Init(JObject gld)
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
+		private static void GameLogicData_Parse(JObject rootObject)
+		{
+			Init(rootObject);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsTribeUnlocked))]
+		private static void PurchaseManager_IsTribeUnlocked(ref bool __result, TribeData.Type type)
+		{
+			__result = (int)type >= Plugin.AUTOIDX_STARTS_FROM || __result;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetTileSpriteAddress), new Type[] { typeof(Polytopia.Data.TerrainData.Type), typeof(string) })]
+		private static void SpriteData_GetTileSpriteAddress(ref SpriteAddress __result, Polytopia.Data.TerrainData.Type terrain, string skinId)
+		{
+			__result = GetSprite(__result, EnumCache<Polytopia.Data.TerrainData.Type>.GetName(terrain), skinId);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetResourceSpriteAddress), new Type[] { typeof(ResourceData.Type), typeof(string) })]
+		private static void SpriteData_GetResourceSpriteAddress(ref SpriteAddress __result, ResourceData.Type type, string skinId)
+		{
+			__result = GetSprite(__result, EnumCache<ResourceData.Type>.GetName(type), skinId);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetBuildingSpriteAddress), new Type[] { typeof(ImprovementData.Type), typeof(string) })]
+		private static void SpriteData_GetBuildingSpriteAddress(ref SpriteAddress __result, ImprovementData.Type type, string skinId)
+		{
+			__result = GetSprite(__result, EnumCache<ImprovementData.Type>.GetName(type), skinId);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetUnitIconAddress))]
+		private static void SpriteData_GetUnitIconAddress(ref SpriteAddress __result, UnitData.Type type)
+		{
+			__result = GetSprite(__result, "icon", EnumCache<UnitData.Type>.GetName(type));
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(int) })]
+		private static void SpriteData_GetHeadSpriteAddress_1(ref SpriteAddress __result, int tribe)
+		{
+			__result = GetSprite(__result, "head", $"{tribe}");
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(string) })]
+		private static void SpriteData_GetHeadSpriteAddress_2(ref SpriteAddress __result, string specialId)
+		{
+			__result = GetSprite(__result, "head", specialId);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetAvatarPartSpriteAddress))]
+		private static void SpriteData_GetAvatarPartSpriteAddress(ref SpriteAddress __result, string sprite)
+		{
+			__result = GetSprite(__result, sprite, "");
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHouseAddresses))]
+		private static void SpriteData_GetHouseAddresses(ref Il2CppReferenceArray<SpriteAddress> __result, int type, string styleId, SkinType skinType)
+		{
+			List<SpriteAddress> sprites = new()
+			{
+				GetSprite(__result[0], "house", styleId, type)
+			};
+			if (skinType != SkinType.Default)
+			{
+				sprites.Add(GetSprite(__result[1], "house", EnumCache<SkinType>.GetName(skinType), type));
+			}
+			__result = sprites.ToArray();
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetAddress))]
+		public static bool SpriteData_GetAddress(ref SpriteAddress __result, PickerType pickerType, string skinID)
+		{
+			switch (pickerType)
+			{
+				case PickerType.Head:
+					__result = SpriteData.GetHeadSpriteAddress(skinID);
+					break;
+				case PickerType.Unit:
+					__result = new SpriteAddress("Units", skinID);
+					break;
+				case PickerType.TerrainFeature:
+					__result = new SpriteAddress("TerrainFeatures", skinID);
+					break;
+				case PickerType.Roof:
+					__result = new SpriteAddress("Units", "roof_" + skinID);
+					break;
+				case PickerType.PolytaurHead:
+					__result = new SpriteAddress("Units", "polytaur_2_" + skinID);
+					break;
+				case PickerType.Animal:
+					__result = SpriteData.GetResourceSpriteAddress(ResourceData.Type.Game, skinID);
+					break;
+				case PickerType.Fruit:
+					__result = SpriteData.GetResourceSpriteAddress(ResourceData.Type.Fruit, skinID);
+					break;
+				case PickerType.Forest:
+					__result = SpriteData.GetTileSpriteAddress(Polytopia.Data.TerrainData.Type.Forest, skinID);
+					break;
+				case PickerType.Mountain:
+					__result = SpriteData.GetTileSpriteAddress(Polytopia.Data.TerrainData.Type.Mountain, skinID);
+					break;
+			}
+			return false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
+		private static void AudioManager_SetAmbienceClimatePrefix(ref int climate)
+		{
+			if (climate > 16)
+			{
+				climate = 1;
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
+		private static void TechItem_GetUnlockItems(TechData data, PlayerState playerState, bool onlyPickFirstItem = false)
+		{
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
+		private static void TechItem_SetupComplete()
+		{
+		}
+
+		private static void Init(JObject gld)
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
@@ -127,7 +265,7 @@ namespace PolyMod
 			gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
 		}
 
-		internal static SpriteAddress GetSprite(SpriteAddress sprite, string name, string style = "", int level = 0)
+		private static SpriteAddress GetSprite(SpriteAddress sprite, string name, string style = "", int level = 0)
 		{
 			if (int.TryParse(style, out int istyle) && _styles.ContainsKey(istyle))
 			{

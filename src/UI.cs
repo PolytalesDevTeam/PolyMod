@@ -1,4 +1,5 @@
-﻿using PolytopiaBackendBase.Game;
+﻿using HarmonyLib;
+using PolytopiaBackendBase.Game;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static PopupBase;
@@ -8,10 +9,65 @@ namespace PolyMod
 	internal static class UI
 	{
 		internal static bool active = false;
-		internal static int width;
-		internal static int height = 200;
-		internal static int inputValue = 0;
-		internal const string header = "POLYMOD";
+		private static int width;
+		private static int inputValue = 0;
+		private const string header = "POLYMOD";
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(BasicPopup), nameof(BasicPopup.Update))]
+		private static void BasicPopup_Update(BasicPopup __instance)
+		{
+			if (active)
+			{
+				__instance.rectTransform.SetWidth(width);
+				__instance.rectTransform.SetHeight(200);
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(PopupButtonContainer), nameof(PopupButtonContainer.SetButtonData))]
+		private static void PopupButtonContainer_SetButtonData(PopupButtonContainer __instance)
+		{
+			int num = __instance.buttons.Length;
+			for (int i = 0; i < num; i++)
+			{
+				UITextButton uitextButton = __instance.buttons[i];
+				Vector2 vector = new((num == 1) ? 0.5f : (i / (num - 1.0f)), 0.5f);
+				uitextButton.rectTransform.anchorMin = vector;
+				uitextButton.rectTransform.anchorMax = vector;
+				uitextButton.rectTransform.pivot = vector;
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SearchFriendCodePopup), nameof(SearchFriendCodePopup.OnInputChanged))]
+		private static bool SearchFriendCodePopup_OnInputChanged(SearchFriendCodePopup __instance)
+		{
+			if (active)
+			{
+				OnInputChanged(__instance);
+			}
+			return !active;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SearchFriendCodePopup), nameof(SearchFriendCodePopup.OnInputDone))]
+		private static bool SearchFriendCodePopup_OnInputDone()
+		{
+			return !active;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(VersionManager), nameof(VersionManager.GameVersion), MethodType.Getter)]
+		private static bool VersionManager_GameVersion(ref int __result)
+		{
+			if (Plugin.version == -1)
+			{
+				return true;
+			}
+			__result = Plugin.version;
+			return false;
+		}
 
 		public static void Show()
 		{

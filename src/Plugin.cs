@@ -25,16 +25,27 @@ namespace PolyMod
 		internal static int version = -1;
 		internal static bool start = false;
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
+		private static void GameManager_Update()
+		{
+			Update();
+		}
+
 		public override void Load()
 		{
-			Harmony.CreateAndPatchAll(typeof(Patcher));
+			Harmony.CreateAndPatchAll(typeof(Plugin));
+			Harmony.CreateAndPatchAll(typeof(BotGame));
+			Harmony.CreateAndPatchAll(typeof(MapLoader));
+			Harmony.CreateAndPatchAll(typeof(ModLoader));
+			Harmony.CreateAndPatchAll(typeof(UI));
 			logger = Log;
 		}
 
 		internal static void Start()
 		{
-			Directory.CreateDirectory(MAPS_PATH);
 			BotGame.Init();
+			MapLoader.Init();
 		}
 
 		internal static void Update()

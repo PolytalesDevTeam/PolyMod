@@ -1,16 +1,15 @@
 using Il2CppSystem.Runtime.CompilerServices;
-using Newtonsoft.Json.Utilities;
 using PolytopiaBackendBase.Game;
 
 namespace PolyMod
 {
 	internal static class ReplayResumer
 	{
-		internal static ClientBase? replayClient;
+		private static ClientBase? _replayClient;
 		internal static string nameStart = "(From move ";
-		internal static string nameEnd = ")";
+		private static string _nameEnd = ")";
 
-		public static void BackToReplay()
+		internal static void BackToReplay()
 		{
 			ClientBase passAndPlayClient = GameManager.Client;
 			if (!passAndPlayClient.GameState.Settings.GameName.StartsWith(nameStart))
@@ -25,13 +24,13 @@ namespace PolyMod
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-			if (replayClient == null)
+			if (_replayClient == null)
 			{
 				Plugin.logger.LogWarning(string.Format("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}
-			if (replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName[^36..])
+			if (_replayClient.gameId.ToString() != passAndPlayClient.GameState.Settings.GameName[^36..])
 			{
 				Plugin.logger.LogWarning(string.Format("{0} Replay client game id does not match resumed game id", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 				GameManager.instance.SetLoadingGame(false);
@@ -40,13 +39,13 @@ namespace PolyMod
 			Plugin.logger.LogInfo(string.Format("{0} Loading replay {1} Game", new Il2CppSystem.Object[]
 			{
 				"<color=#FFFFFF>[GameManager]</color>",
-				replayClient.initialGameState.Settings.BaseGameMode.ToString()
+				_replayClient.initialGameState.Settings.BaseGameMode.ToString()
 			}));
 			GameManager.instance.SetLoadingGame(true);
-			GameManager.instance.client = replayClient;
+			GameManager.instance.client = _replayClient;
 			GameManager.instance.LoadLevel();
 		}
-		public static void Resume()
+		internal static void Resume()
 		{
 			ClientBase replayClient = GameManager.Client;
 			if (!replayClient.IsReplay)
@@ -82,7 +81,7 @@ namespace PolyMod
 			}
 		}
 
-		public static HotseatClient SetHotseatClient()
+		internal static HotseatClient SetHotseatClient()
 		{
 			GameManager.instance.settings.GameType = GameType.PassAndPlay;
 			Plugin.logger.LogInfo(string.Format("{0} Setting up hotseat client...", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
@@ -99,12 +98,12 @@ namespace PolyMod
 			return hotseatClient;
 		}
 
-		public static Il2CppSystem.Threading.Tasks.Task<bool> TransformClient(ClientBase replayClient, HotseatClient hotseatClient)
+		internal static Il2CppSystem.Threading.Tasks.Task<bool> TransformClient(ClientBase replayClient, HotseatClient hotseatClient)
 		{
-			ReplayResumer.replayClient = replayClient;
+			ReplayResumer._replayClient = replayClient;
 			GameState initialGameState = replayClient.initialGameState;
 			initialGameState.Settings.GameType = GameType.PassAndPlay;
-			initialGameState.Settings.gameName = nameStart + replayClient.GetLastSeenCommand().ToString() + nameEnd + initialGameState.Settings.gameName + replayClient.gameId.ToString();
+			initialGameState.Settings.gameName = nameStart + replayClient.GetLastSeenCommand().ToString() + _nameEnd + initialGameState.Settings.gameName + replayClient.gameId.ToString();
 			byte[] array = SerializationHelpers.ToByteArray(initialGameState, replayClient.initialGameState.Version);
 			SerializationHelpers.FromByteArray(array, out GameState currentGameState);
 			SerializationHelpers.FromByteArray(array, out GameState _);

@@ -1,21 +1,145 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using HarmonyLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Newtonsoft.Json.Linq;
 using Polytopia.Data;
+using PolytopiaBackendBase.Game;
 
 namespace PolyMod
 {
 	internal static class MapLoader
 	{
-		internal static JObject? map;
-		internal static bool isListInstantiated = false;
-		internal static UIHorizontalList customMapsList = new UIHorizontalList { };
-		internal static Il2CppSystem.Collections.Generic.List<int> GetCapitals(Il2CppSystem.Collections.Generic.List<int> originalCapitals, int width, int playerCount)
+		private static JObject? _map;
+		private static bool _isListInstantiated = false;
+		private static UIHorizontalList _customMapsList = new() { };
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.Generate))]
+		private static void MapGenerator_Generate(ref GameState state, ref MapGeneratorSettings settings)
 		{
-			if (map == null || map["capitals"] == null)
+			PreGenerate(ref state, ref settings);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.Generate))]
+		private static void MapGenerator_Generate_(ref GameState state)
+		{
+			PostGenerate(ref state);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.GeneratePlayerCapitalPositions))]
+		private static void MapGenerator_GeneratePlayerCapitalPositions(ref Il2CppSystem.Collections.Generic.List<int> __result)
+		{
+			__result = GetCapitals(__result);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameManager), nameof(GameManager.GetMaxOpponents))]
+		private static void GameManager_GetMaxOpponents(ref int __result)
+		{
+			__result = Plugin.MAP_MAX_PLAYERS - 1;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MapDataExtensions), nameof(MapDataExtensions.GetMaximumOpponentCountForMapSize))]
+		private static void MapDataExtensions_GetMaximumOpponentCountForMapSize(ref int __result)
+		{
+			__result = Plugin.MAP_MAX_PLAYERS;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.GetUnlockedTribeCount))]
+		private static void PurchaseManager_GetUnlockedTribeCount(ref int __result)
+		{
+			__result = Plugin.MAP_MAX_PLAYERS + 2;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(CameraController), nameof(CameraController.Awake))]
+		private static void CameraController_Awake()
+		{
+			CameraController.Instance.maxZoom = Plugin.CAMERA_MAXZOOM_CONSTANT;
+			CameraController.Instance.techViewBounds = new(
+				new(Plugin.CAMERA_MAXZOOM_CONSTANT, Plugin.CAMERA_MAXZOOM_CONSTANT), CameraController.Instance.techViewBounds.size
+			);
+			UnityEngine.GameObject.Find("TechViewWorldSpace").transform.position = new(Plugin.CAMERA_MAXZOOM_CONSTANT, Plugin.CAMERA_MAXZOOM_CONSTANT);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameSetupScreen.MapPresetDataSource), nameof(GameSetupScreen.MapPresetDataSource.GetData))]
+		private static void GameSetupScreen_MapPresetDataSource_GetData(ref Il2CppStructArray<MapPreset> __result)
+		{
+			List<MapPreset> presets = __result.ToList();
+			presets.Add((MapPreset)500);
+			__result = presets.ToArray();
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.OnMapPresetChanged))]
+		private static void GameSetupScreen_OnMapPresetChanged(GameSetupScreen __instance, int index)
+		{
+			_map = null;
+			MapPreset[] array = GameSetupScreen.MapPresetDataSource.GetData(GameManager.PreliminaryGameSettings.GameType == GameType.Matchmaking);
+
+			if (_isListInstantiated)
+			{
+				UnityEngine.Object.Destroy(_customMapsList.gameObject);
+				_isListInstantiated = false;
+			}
+
+			if ((int)array[index] == 500)
+			{
+				string[] maps = Directory.GetFiles(Plugin.MAPS_PATH, "*.json");
+				if (maps.Length != 0)
+				{
+					GameManager.PreliminaryGameSettings.mapPreset = array[index];
+					_customMapsList = __instance.CreateHorizontalList("Maps", maps.Select(map => Path.GetFileNameWithoutExtension(map)).ToArray(), new Action<int>(OnCustomMapChanged), 0, null, 500);
+					_isListInstantiated = true;
+				}
+				else
+				{
+					GameManager.PreliminaryGameSettings.mapPreset = MapPreset.None;
+					NotificationManager.Notify(Localization.Get("No maps found"), Localization.Get("gamesettings.notavailable"), null, null);
+				}
+			}
+
+			__instance.UpdateOpponentList();
+			GameManager.PreliminaryGameSettings.SaveToDisk();
+			__instance.RefreshInfo();
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.OnStartGameClicked))]
+		private static void GameSetupScreen_OnStartGameClicked()
+		{
+			_isListInstantiated = false;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MapPresetExtensions), nameof(MapPresetExtensions.GetLocalizationName))]
+		private static void MapPresetExtensions_GetLocalizationName(ref string __result, MapPreset mapPreset)
+		{
+			if (mapPreset == (MapPreset)500)
+			{
+				__result = "Custom";
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.RedrawScreen))]
+		private static void GameSetupScreen_RedrawScreen()
+		{
+			_map = null;
+		}
+
+		private static Il2CppSystem.Collections.Generic.List<int> GetCapitals(Il2CppSystem.Collections.Generic.List<int> originalCapitals)
+		{
+			if (_map == null || _map["capitals"] == null)
 			{
 				return originalCapitals;
 			}
 
-			JArray jcapitals = map["capitals"].Cast<JArray>();
+			JArray jcapitals = _map["capitals"].Cast<JArray>();
 			Il2CppSystem.Collections.Generic.List<int> capitals = new();
 			for (int i = 0; i < jcapitals.Count; i++)
 			{
@@ -30,13 +154,13 @@ namespace PolyMod
 			return capitals.GetRange(0, originalCapitals.Count);
 		}
 
-		internal static void PreGenerate(ref GameState state, ref MapGeneratorSettings settings)
+		private static void PreGenerate(ref GameState state, ref MapGeneratorSettings settings)
 		{
-			if (map == null)
+			if (_map == null)
 			{
 				return;
 			}
-			ushort size = (ushort)map["size"];
+			ushort size = (ushort)_map["size"];
 
 			if (size < Plugin.MAP_MIN_SIZE || size > Plugin.MAP_MAX_SIZE)
 			{
@@ -46,9 +170,14 @@ namespace PolyMod
 			settings.mapType = PolytopiaBackendBase.Game.MapPreset.Dryland;
 		}
 
-		internal static void PostGenerate(ref GameState state)
+		internal static void Init()
 		{
-			if (map == null)
+			Directory.CreateDirectory(Plugin.MAPS_PATH);
+		}
+
+		private static void PostGenerate(ref GameState state)
+		{
+			if (_map == null)
 			{
 				return;
 			}
@@ -57,7 +186,7 @@ namespace PolyMod
 			for (int i = 0; i < originalMap.tiles.Length; i++)
 			{
 				TileData tile = originalMap.tiles[i];
-				JToken tileJson = map["map"][i];
+				JToken tileJson = _map["map"][i];
 
 				if (tileJson["skip"] != null && (bool)tileJson["skip"]) continue;
 
@@ -83,7 +212,7 @@ namespace PolyMod
 				}
 				else
 				{
-					if (map["autoTribe"] != null && (bool)map["autoTribe"])
+					if (_map["autoTribe"] != null && (bool)_map["autoTribe"])
 					{
 						state.TryGetPlayer(tile.owner, out PlayerState player);
 						if (player == null)
@@ -125,12 +254,12 @@ namespace PolyMod
 				originalMap.tiles[i] = tile;
 			}
 
-			map = null;
+			_map = null;
 		}
 
-		public static void OnCustomMapChanged(int index)
+		private static void OnCustomMapChanged(int index)
 		{
-			map = JObject.Parse(File.ReadAllText(Directory.GetFiles(Plugin.MAPS_PATH, "*.json")[index]));
+			_map = JObject.Parse(File.ReadAllText(Directory.GetFiles(Plugin.MAPS_PATH, "*.json")[index]));
 		}
 	}
 }
