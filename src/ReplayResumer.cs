@@ -26,7 +26,7 @@ namespace PolyMod
 			}
 			if (_replayClient == null)
 			{
-				Plugin.logger.LogWarning(string.Format("{0} No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
+				Plugin.logger.LogWarning(string.Format("No replay client to return to", new Il2CppSystem.Object[] { "<color=#FFFFFF>[GameManager]</color>" }));
 				GameManager.instance.SetLoadingGame(false);
 				return;
 			}

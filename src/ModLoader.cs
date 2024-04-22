@@ -181,7 +181,8 @@ namespace PolyMod
 
 					if (Path.GetExtension(name) == ".png")
 					{
-						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), BuildSprite(entry.ReadBytes()));
+						Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] == "field" ? new(0.5f, 0.0f) : new(0.5f, 0.5f);
+						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), BuildSprite(entry.ReadBytes(), pivot));
 					}
 				}
 			}
@@ -287,11 +288,11 @@ namespace PolyMod
 			}
 		}
 
-		private static Sprite BuildSprite(byte[] data)
+		private static Sprite BuildSprite(byte[] data, Vector2 pivot)
 		{
 			Texture2D texture = new(1, 1);
 			texture.LoadImage(data);
-			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), new(0.5f, 0.5f), 2112);
+			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
 	}
 }
