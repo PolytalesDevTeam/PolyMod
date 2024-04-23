@@ -38,16 +38,16 @@ namespace PolyMod
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetResourceSpriteAddress), new Type[] { typeof(ResourceData.Type), typeof(string) })]
-		private static void SpriteData_GetResourceSpriteAddress(ref SpriteAddress __result, ResourceData.Type type, string skinId)
+		private static void SpriteData_GetResourceSpriteAddress(ref SpriteAddress __result, ResourceData.Type type, string skinOrTribeAsString)
 		{
-			__result = GetSprite(__result, EnumCache<ResourceData.Type>.GetName(type), skinId);
+			__result = GetSprite(__result, EnumCache<ResourceData.Type>.GetName(type), skinOrTribeAsString);
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetBuildingSpriteAddress), new Type[] { typeof(ImprovementData.Type), typeof(string) })]
-		private static void SpriteData_GetBuildingSpriteAddress(ref SpriteAddress __result, ImprovementData.Type type, string skinId)
+		private static void SpriteData_GetBuildingSpriteAddress(ref SpriteAddress __result, ImprovementData.Type type, string climateOrSkinAsString)
 		{
-			__result = GetSprite(__result, EnumCache<ImprovementData.Type>.GetName(type), skinId);
+			__result = GetSprite(__result, EnumCache<ImprovementData.Type>.GetName(type), climateOrSkinAsString);
 		}
 
 		[HarmonyPostfix]
@@ -58,17 +58,17 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(int) })]
-		private static void SpriteData_GetHeadSpriteAddress_1(ref SpriteAddress __result, int tribe)
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(string) })]
+		private static void SpriteData_GetHeadSpriteAddress_1(ref SpriteAddress __result, string tribeOrSkin)
 		{
-			__result = GetSprite(__result, "head", $"{tribe}");
+			__result = GetSprite(__result, "head", tribeOrSkin);
 		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(string) })]
-		private static void SpriteData_GetHeadSpriteAddress_2(ref SpriteAddress __result, string specialId)
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(SpriteData.SpecialFaceIcon) })]
+		private static void SpriteData_GetHeadSpriteAddress_2(ref SpriteAddress __result, SpriteData.SpecialFaceIcon specialId)
 		{
-			__result = GetSprite(__result, "head", specialId);
+			__result = GetSprite(__result, "head", specialId.ToString());
 		}
 
 		[HarmonyPostfix]
@@ -79,7 +79,7 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHouseAddresses))]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHouseAddresses), new Type[] { typeof(int), typeof(string), typeof(SkinType) })]
 		private static void SpriteData_GetHouseAddresses(ref Il2CppReferenceArray<SpriteAddress> __result, int type, string styleId, SkinType skinType)
 		{
 			List<SpriteAddress> sprites = new()
@@ -138,18 +138,6 @@ namespace PolyMod
 			{
 				climate = 1;
 			}
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
-		private static void TechItem_GetUnlockItems(TechData data, PlayerState playerState, bool onlyPickFirstItem = false)
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
-		private static void TechItem_SetupComplete()
-		{
 		}
 
 		private static void Init(JObject gld)
@@ -254,7 +242,7 @@ namespace PolyMod
 							break;
 						case "unitData":
 							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)idx);
-							PrefabManager.units.TryAdd((UnitData.Type)idx, PrefabManager.units[UnitData.Type.Scout]);
+							//PrefabManager.units.TryAdd((UnitData.Type)idx, PrefabManager.units[UnitData.Type.Scout]); //what?
 							break;
 						case "techData":
 							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)idx);
@@ -268,6 +256,7 @@ namespace PolyMod
 
 		private static SpriteAddress GetSprite(SpriteAddress sprite, string name, string style = "", int level = 0)
 		{
+			Console.WriteLine(style);
 			if (int.TryParse(style, out int istyle) && _styles.ContainsKey(istyle))
 			{
 				style = _styles[istyle];
