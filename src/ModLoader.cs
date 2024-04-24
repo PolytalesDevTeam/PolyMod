@@ -140,7 +140,19 @@ namespace PolyMod
 			}
 		}
 
-		private static void Init(JObject gld)
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
+        private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
+        {
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
+        private static void TechItem_SetupComplete()
+        {
+        }
+
+        private static void Init(JObject gld)
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
@@ -169,7 +181,19 @@ namespace PolyMod
 
 					if (Path.GetExtension(name) == ".png")
 					{
-						Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] == "field" ? new(0.5f, 0.0f) : new(0.5f, 0.5f);
+						Vector2 pivot;
+                        switch (Path.GetFileNameWithoutExtension(name).Split("_")[0])
+						{
+							case "field":
+                                pivot = new(0.5f, 0.0f);
+								break;
+                            case "mountain":
+								pivot = new(0.5f, -0.375f);//midjiate can I just ask WHAT THE FUCK IS THAT, WHY Y`ALL HAVE TO CHANGE PIVOTS RAAAAAAH
+                                break;
+							default:
+                                pivot = new(0.5f, 0.5f);
+                                break;
+                        }
 						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), BuildSprite(entry.ReadBytes(), pivot));
 					}
 				}
@@ -242,7 +266,7 @@ namespace PolyMod
 							break;
 						case "unitData":
 							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)idx);
-							//PrefabManager.units.TryAdd((UnitData.Type)idx, PrefabManager.units[UnitData.Type.Scout]); //what?
+                            PrefabManager.units.TryAdd((int)(UnitData.Type)idx, PrefabManager.units[(int)UnitData.Type.Scout]); //bruh
 							break;
 						case "techData":
 							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)idx);
