@@ -13,8 +13,6 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
-		private static readonly Dictionary<int, string> _styles = new();
-
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
@@ -181,19 +179,12 @@ namespace PolyMod
 
 					if (Path.GetExtension(name) == ".png")
 					{
-						Vector2 pivot;
-                        switch (Path.GetFileNameWithoutExtension(name).Split("_")[0])
+						Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] switch
 						{
-							case "field":
-                                pivot = new(0.5f, 0.0f);
-								break;
-                            case "mountain":
-								pivot = new(0.5f, -0.375f);//midjiate can I just ask WHAT THE FUCK IS THAT, WHY Y`ALL HAVE TO CHANGE PIVOTS RAAAAAAH
-                                break;
-							default:
-                                pivot = new(0.5f, 0.5f);
-                                break;
-                        }
+							"field" => new(0.5f, 0.0f),
+							"mountain" => new(0.5f, -0.375f),
+							_ => new(0.5f, 0.5f),
+						};
 						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), BuildSprite(entry.ReadBytes(), pivot));
 					}
 				}
@@ -227,18 +218,6 @@ namespace PolyMod
 			{
 				JObject token = jtoken.Cast<JObject>();
 
-				if (token["climate"] != null && !int.TryParse((string)token["climate"], out _))
-				{
-					++idx;
-					_styles.TryAdd(idx, (string)token["climate"]);
-					token["climate"] = idx;
-				}
-				if (token["style"] != null && !int.TryParse((string)token["style"], out _))
-				{
-					++idx;
-					_styles.TryAdd(idx, (string)token["style"]);
-					token["style"] = idx;
-				}
 				if (token["idx"] != null && (int)token["idx"] == -1)
 				{
 					++idx;
@@ -280,12 +259,6 @@ namespace PolyMod
 
 		private static SpriteAddress GetSprite(SpriteAddress sprite, string name, string style = "", int level = 0)
 		{
-			Console.WriteLine(style);
-			if (int.TryParse(style, out int istyle) && _styles.ContainsKey(istyle))
-			{
-				style = _styles[istyle];
-			}
-
 			GetSpriteIfFound($"{name}__", ref sprite);
 			GetSpriteIfFound($"{name}_{style}_", ref sprite);
 			GetSpriteIfFound($"{name}__{level}", ref sprite);
