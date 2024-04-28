@@ -124,7 +124,28 @@ namespace PolyMod
 				case PickerType.Mountain:
 					__result = SpriteData.GetTileSpriteAddress(Polytopia.Data.TerrainData.Type.Mountain, skinID);
 					break;
-			}
+                case PickerType.Monument_1:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument1, skinID);
+					break;
+                case PickerType.Monument_2:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument2, skinID);
+                    break;
+                case PickerType.Monument_3:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument3, skinID);
+                    break;
+                case PickerType.Monument_4:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument4, skinID);
+                    break;
+                case PickerType.Monument_5:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument5, skinID);
+                    break;
+                case PickerType.Monument_6:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument6, skinID);
+                    break;
+                case PickerType.Monument_7:
+                    __result = SpriteData.GetBuildingSpriteAddress(ImprovementData.Type.Monument7, skinID);
+                    break;
+            }
 			return false;
 		}
 
@@ -280,5 +301,12 @@ namespace PolyMod
 			texture.LoadImage(data);
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
-	}
+
+        private static AudioClip BuildAudioClip(byte[] data)
+        {
+            AudioClip clip = AudioClip.Create("", data.Length, (int)BitConverter.ToInt16(data, 22), BitConverter.ToInt32(data, 24), false);
+            //clip.SetData(data, 0);
+            return clip;
+        }
+    }
 }
