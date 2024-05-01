@@ -161,11 +161,6 @@ namespace PolyMod
 				return;
 			}
 			ushort size = (ushort)_map["size"];
-
-			if (size < Plugin.MAP_MIN_SIZE || size > Plugin.MAP_MAX_SIZE)
-			{
-				throw new Exception($"The map size must be between {Plugin.MAP_MIN_SIZE} and {Plugin.MAP_MAX_SIZE}");
-			}
 			state.Map = new(size, size);
 			settings.mapType = PolytopiaBackendBase.Game.MapPreset.Dryland;
 		}

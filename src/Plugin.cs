@@ -9,8 +9,6 @@ namespace PolyMod
 	[BepInPlugin("com.polymod", "PolyMod", "0.0.0")]
 	public class Plugin : BepInEx.Unity.IL2CPP.BasePlugin
 	{
-		internal const uint MAP_MIN_SIZE = 6;
-		internal const uint MAP_MAX_SIZE = 100;
 		internal const int MAP_MAX_PLAYERS = 100;
 		internal const float CAMERA_MAXZOOM_CONSTANT = 1000;
 		internal const int AUTOIDX_STARTS_FROM = 1000;
