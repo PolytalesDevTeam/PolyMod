@@ -149,6 +149,13 @@ namespace PolyMod
 			return false;
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteAtlasManager), nameof(SpriteAtlasManager.GetAtlasNameForSprite))]
+		private static void SpriteAtlasManager_GetAtlasNameForSprite(SpriteAtlasManager __instance, ref string __result, Sprite sprite)
+		{
+			__result = __instance.cachedSprites["Heads"].ContainsValue(sprite) ? "Heads" : __result;
+		}
+
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
 		private static void AudioManager_SetAmbienceClimatePrefix(ref int climate)
