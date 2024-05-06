@@ -56,15 +56,22 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(string) })]
-		private static void SpriteData_GetHeadSpriteAddress_1(ref SpriteAddress __result, string tribeOrSkin)
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(SkinType) })]
+		private static void SpriteData_GetHeadSpriteAddress(ref SpriteAddress __result, SkinType skin)
 		{
-			__result = GetSprite(__result, "head", tribeOrSkin);
+			__result = GetSprite(__result, "head", EnumCache<SkinType>.GetName(skin));
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(TribeData.Type) })]
+		private static void SpriteData_GetHeadSpriteAddress(ref SpriteAddress __result, TribeData.Type type)
+		{
+			__result = GetSprite(__result, "head", EnumCache<TribeData.Type>.GetName(type));
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(SpriteData.SpecialFaceIcon) })]
-		private static void SpriteData_GetHeadSpriteAddress_2(ref SpriteAddress __result, SpriteData.SpecialFaceIcon specialId)
+		private static void SpriteData_GetHeadSpriteAddress(ref SpriteAddress __result, SpriteData.SpecialFaceIcon specialId)
 		{
 			__result = GetSprite(__result, "head", specialId.ToString());
 		}
