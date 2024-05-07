@@ -156,13 +156,6 @@ namespace PolyMod
 			return false;
 		}
 
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteAtlasManager), nameof(SpriteAtlasManager.GetAtlasNameForSprite))]
-		private static void SpriteAtlasManager_GetAtlasNameForSprite(SpriteAtlasManager __instance, ref string __result, Sprite sprite)
-		{
-			__result = __instance.cachedSprites["Heads"].ContainsValue(sprite) ? "Heads" : __result;
-		}
-
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
 		private static void AudioManager_SetAmbienceClimatePrefix(ref int climate)
@@ -178,13 +171,13 @@ namespace PolyMod
 		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
 		{
 		}
-		
+
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
 		private static void TechItem_SetupComplete()
 		{
 		}
-		
+
 		private static void Init(JObject gld)
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
@@ -220,7 +213,9 @@ namespace PolyMod
 							"mountain" => new(0.5f, -0.375f),
 							_ => new(0.5f, 0.5f),
 						};
-						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), BuildSprite(entry.ReadBytes(), pivot));
+						Sprite sprite = BuildSprite(entry.ReadBytes(), pivot);
+						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
+						GameManager.GetSpriteAtlasManager().spriteToAtlasName.Add(sprite, "Heads");
 					}
 				}
 			}
@@ -280,7 +275,7 @@ namespace PolyMod
 							break;
 						case "unitData":
 							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)idx);
-                            PrefabManager.units.TryAdd((int)(UnitData.Type)idx, PrefabManager.units[(int)UnitData.Type.Scout]); //bruh
+							PrefabManager.units.TryAdd((int)(UnitData.Type)idx, PrefabManager.units[(int)UnitData.Type.Scout]); //bruh
 							break;
 						case "techData":
 							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)idx);
@@ -318,9 +313,9 @@ namespace PolyMod
 
 		private static AudioClip BuildAudioClip(byte[] data)
 		{
-		    AudioClip clip = AudioClip.Create("", data.Length, (int)BitConverter.ToInt16(data, 22), BitConverter.ToInt32(data, 24), false);
-		    //clip.SetData(data, 0);
-		    return clip;
+			AudioClip clip = AudioClip.Create("", data.Length, (int)BitConverter.ToInt16(data, 22), BitConverter.ToInt32(data, 24), false);
+			//clip.SetData(data, 0);
+			return clip;
 		}
 	}
 }
