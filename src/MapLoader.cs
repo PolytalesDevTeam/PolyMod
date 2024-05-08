@@ -168,6 +168,7 @@ namespace PolyMod
 		internal static void Init()
 		{
 			Directory.CreateDirectory(Plugin.MAPS_PATH);
+			EnumCache<MapPreset>.AddMapping("Custom", (MapPreset)500);
 		}
 
 		private static void PostGenerate(ref GameState state)

@@ -2,6 +2,7 @@
 using HarmonyLib;
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Microsoft.CSharp.RuntimeBinder;
 using Il2CppSystem.Linq;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
@@ -187,24 +188,14 @@ namespace PolyMod
 			{
 				ZipArchive mod = new(File.OpenRead(modname));
 
-				ZipArchiveEntry? patch = mod.GetEntry("patch.json");
-				if (patch != null)
-				{
-					try
-					{
-						Patch(gld, JObject.Parse(new StreamReader(patch.Open()).ReadToEnd()));
-					}
-					catch
-					{
-						Plugin.logger.LogError(modname + " gld patch parse error!");
-						continue;
-					}
-				}
-
 				foreach (var entry in mod.Entries)
 				{
 					string name = entry.ToString();
 
+					if (Path.GetFileName(name) == "patch.json") 
+					{
+						Patch(gld, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
+					}
 					if (Path.GetExtension(name) == ".png")
 					{
 						Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] switch
@@ -242,8 +233,6 @@ namespace PolyMod
 			}
 			patch.Remove("localizationData");
 
-			EnumCache<MapPreset>.AddMapping("Custom", (MapPreset)500);
-
 			foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
 			{
 				JObject token = jtoken.Cast<JObject>();
@@ -275,7 +264,7 @@ namespace PolyMod
 							break;
 						case "unitData":
 							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)idx);
-							PrefabManager.units.TryAdd((int)(UnitData.Type)idx, PrefabManager.units[(int)UnitData.Type.Scout]); //bruh
+							PrefabManager.units.TryAdd((int)(UnitData.Type)idx, PrefabManager.units[(int)UnitData.Type.Scout]);
 							break;
 						case "techData":
 							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)idx);
@@ -309,13 +298,6 @@ namespace PolyMod
 			Texture2D texture = new(1, 1);
 			texture.LoadImage(data);
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
-		}
-
-		private static AudioClip BuildAudioClip(byte[] data)
-		{
-			AudioClip clip = AudioClip.Create("", data.Length, (int)BitConverter.ToInt16(data, 22), BitConverter.ToInt32(data, 24), false);
-			//clip.SetData(data, 0);
-			return clip;
 		}
 	}
 }
