@@ -167,6 +167,38 @@ namespace PolyMod
 			}
 		}
 
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(SpriteAtlasManager), nameof(SpriteAtlasManager.LoadSpriteAtlasTexture))]
+		private static bool SpriteAtlasManager_LoadSpriteAtlasTexture(SpriteAtlasManager __instance, string atlas, Il2CppSystem.Action<Texture2D> completion)
+		{
+			Dictionary<string, Sprite> sprites = new();
+
+			if (atlas != "Heads") return true;
+			if (!__instance.cachedSprites.TryGetValue(atlas, out _))
+			{
+				__instance.cachedSprites[atlas] = new();
+			}
+			foreach (var sprite in __instance.cachedSprites[atlas])
+			{
+				if (sprite.Value.name != string.Empty) break;
+				sprites.Add(sprite.Key, sprite.Value);
+			}
+			Texture2D customAtlas = new(1, 1);
+			Rect[] rects = customAtlas.PackTextures(sprites.Select(i => i.Value.texture).ToArray(), 2);
+			foreach (var sprite in sprites)
+			{
+				Sprite newSprite = Sprite.Create(
+					customAtlas, 
+					rects[sprites.Values.ToList().IndexOf(sprite.Value)], 
+					new(0.5f, 0.5f)
+				);
+				__instance.cachedSprites[atlas][sprite.Key] = newSprite;
+				__instance.spriteToAtlasName[newSprite] = atlas;
+			}
+			completion.Invoke(customAtlas);
+			return false;
+		}
+
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
 		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
