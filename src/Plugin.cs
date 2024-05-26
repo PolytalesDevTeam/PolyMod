@@ -58,17 +58,17 @@ namespace PolyMod
 
 			if (GameManager.Instance.isLevelLoaded && MapManager.isInMapMaker && !mapMakerSettedUp)
 			{
-		                HudButtonBar buttonBar = (UIManager.Instance.GetScreen(UIConstants.Screens.Hud) as HudScreen).buttonBar;
-		                buttonBar.blockRefreshingNextTurnButton = true;
-		                buttonBar.blockRefreshingStatsButton = true;
-		                buttonBar.blockRefreshingTechTreeButton = true;
-		                buttonBar.positionDisplay.gameObject.SetActive(false);
-		                buttonBar.nextTurnButton.BlockButton = true;
-		                buttonBar.techTreeButton.BlockButton = true;
-		                buttonBar.statsButton.BlockButton = true;
+				HudButtonBar buttonBar = (UIManager.Instance.GetScreen(UIConstants.Screens.Hud) as HudScreen).buttonBar;
+				buttonBar.blockRefreshingNextTurnButton = true;
+				buttonBar.blockRefreshingStatsButton = true;
+				buttonBar.blockRefreshingTechTreeButton = true;
+				buttonBar.positionDisplay.gameObject.SetActive(false);
+				buttonBar.nextTurnButton.BlockButton = true;
+				buttonBar.techTreeButton.BlockButton = true;
+				buttonBar.statsButton.BlockButton = true;
 				mapMakerSettedUp = true;
-            		}
-        	}
+			}
+		}
 
 		internal static string GetJTokenName(JToken token, int n = 1)
 		{

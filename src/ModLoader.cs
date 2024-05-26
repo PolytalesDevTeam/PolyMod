@@ -14,6 +14,9 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
+
+		public static Dictionary<string, int> gldDictionary = new();
+
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
@@ -236,6 +239,12 @@ namespace PolyMod
 							"mountain" => new(0.5f, -0.375f),
 							_ => new(0.5f, 0.5f),
 						};
+						//if(name == "actionIcons_mapmaker.png")
+						//{
+						//    UnityEngine.UI.Image image = new UnityEngine.UI.Image();
+						//    image.sprite = BuildSprite(entry.ReadBytes(), pivot);
+						//	MapManager.mapMakerIcon = image;
+						//}
 						Sprite sprite = BuildSprite(entry.ReadBytes(), pivot);
 						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
 						GameManager.GetSpriteAtlasManager().spriteToAtlasName.Add(sprite, "Heads");
@@ -274,7 +283,7 @@ namespace PolyMod
 					++idx;
 					token["idx"] = idx;
 					string id = Plugin.GetJTokenName(token);
-
+					gldDictionary[id] = idx;
 					switch (Plugin.GetJTokenName(token, 2))
 					{
 						case "tribeData":

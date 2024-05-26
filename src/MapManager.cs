@@ -13,6 +13,7 @@ namespace PolyMod
 	{
 		public static bool isInMapMaker = false;
 		public static int chosenClimate = 1;
+		public static int mapMakerButtonIndex;
 		//public static UnityEngine.UI.Image mapMakerIcon;
 		private static JObject? _map;
 		private static bool _isListInstantiated = false;
@@ -22,8 +23,8 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.UpdateListLayout))]
 		private static void GameModeScreen_UpdateListLayout(GameModeScreen __instance)
 		{
-			__instance.buttons[__instance.buttons.Length - 1].text = "MAP MAKER";
-			__instance.buttons[__instance.buttons.Length - 1].description.Text = "Create your own game maps and let your imagination flourish!";
+			__instance.buttons[mapMakerButtonIndex].text = "MAP MAKER";
+			__instance.buttons[mapMakerButtonIndex].description.Text = "Create your own game maps and let your imagination flourish!";
 			//__instance.buttons[__instance.buttons.Length - 1].icon = mapMakerIcon; 
 		}
 	
@@ -34,10 +35,11 @@ namespace PolyMod
 			GamemodeButton prefab = __instance.buttons[2];
 			GamemodeButton button = UnityEngine.GameObject.Instantiate(prefab);
 			button.transform.localScale = new(1.1f, 1.1f);
+			mapMakerButtonIndex = __instance.buttons.Length;
 			List<GamemodeButton> list = __instance.buttons.ToList();
 			list.Add(button);
 			__instance.buttons = list.ToArray();
-			__instance.buttons[__instance.buttons.Length-1].OnClicked += (UIButtonBase.ButtonAction)MapMakerButton_OnClicked;
+			__instance.buttons[mapMakerButtonIndex].OnClicked += (UIButtonBase.ButtonAction)MapMakerButton_OnClicked;
 	
 			void MapMakerButton_OnClicked(int id, BaseEventData eventData = null)
 			{
@@ -74,8 +76,8 @@ namespace PolyMod
 			gameSettings.BaseGameMode = GameMode.Custom;
 			gameSettings.SetUnlockedTribes(GameManager.GetPurchaseManager().GetUnlockedTribes(false));
 			gameSettings.mapPreset = MapPreset.Dryland;
-			gameSettings.mapSize = 30;
-			GameManager.StartingTribe = (TribeData.Type)1001;
+			gameSettings.mapSize = 16;
+			GameManager.StartingTribe = (TribeData.Type)ModLoader.gldDictionary["mapmaker"];
 			GameManager.StartingTribeMix = TribeData.Type.None;
 			GameManager.StartingSkin = SkinType.Default;
 			GameManager.PreliminaryGameSettings = gameSettings;
