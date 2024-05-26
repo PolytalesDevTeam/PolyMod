@@ -22,8 +22,7 @@ namespace PolyMod
 		internal static ManualLogSource logger;
 #pragma warning restore CS8618
 		internal static int version = -1;
-		internal static bool start = false;
-        	internal static bool mapMakerSettedUp = false;
+		internal static bool mapMakerSettedUp = false;
 
         [HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
@@ -34,12 +33,11 @@ namespace PolyMod
 
 		public override void Load()
 		{
+			Start();
 			Harmony.CreateAndPatchAll(typeof(Plugin));
 			Harmony.CreateAndPatchAll(typeof(BotGame));
 			Harmony.CreateAndPatchAll(typeof(MapManager));
-   			EnumCache<ImprovementAbility.Type>.AddMapping("climatesetter", (ImprovementAbility.Type)600);
-   			EnumCache<ImprovementAbility.Type>.AddMapping("climatesetter", (ImprovementAbility.Type)600);
-      			Harmony.CreateAndPatchAll(typeof(ModLoader));
+			Harmony.CreateAndPatchAll(typeof(ModLoader));
 			Harmony.CreateAndPatchAll(typeof(UI));
 			logger = Log;
    			//Harmony.CreateAndPatchAll(typeof(Jkdev));
@@ -53,12 +51,6 @@ namespace PolyMod
 
 		internal static void Update()
 		{
-			if (!start)
-			{
-				Start();
-				start = true;
-			}
-
 			if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !UI.active)
 			{
 				UI.Show();

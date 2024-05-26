@@ -18,37 +18,37 @@ namespace PolyMod
 		private static bool _isListInstantiated = false;
 		private static UIHorizontalList _customMapsList = new() { };
 		
-	        [HarmonyPrefix]
-	        [HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.UpdateListLayout))]
-	        private static void GameModeScreen_UpdateListLayout(GameModeScreen __instance)
-	        {
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.UpdateListLayout))]
+		private static void GameModeScreen_UpdateListLayout(GameModeScreen __instance)
+		{
 			__instance.buttons[__instance.buttons.Length - 1].text = "MAP MAKER";
 			__instance.buttons[__instance.buttons.Length - 1].description.Text = "Create your own game maps and let your imagination flourish!";
 			//__instance.buttons[__instance.buttons.Length - 1].icon = mapMakerIcon; 
-	        }
+		}
 	
-	        [HarmonyPrefix]
-	        [HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.Init))]
-	        private static void GameModeScreen_Init(GameModeScreen __instance)
-	        {
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.Init))]
+		private static void GameModeScreen_Init(GameModeScreen __instance)
+		{
 			GamemodeButton prefab = __instance.buttons[2];
-	            	GamemodeButton button = UnityEngine.GameObject.Instantiate(prefab);
+			GamemodeButton button = UnityEngine.GameObject.Instantiate(prefab);
 			button.transform.localScale = new(1.1f, 1.1f);
-	            	List<GamemodeButton> list = __instance.buttons.ToList();
+			List<GamemodeButton> list = __instance.buttons.ToList();
 			list.Add(button);
-	            	__instance.buttons = list.ToArray();
+			__instance.buttons = list.ToArray();
 			__instance.buttons[__instance.buttons.Length-1].OnClicked += (UIButtonBase.ButtonAction)MapMakerButton_OnClicked;
 	
 			void MapMakerButton_OnClicked(int id, BaseEventData eventData = null)
 			{
 				StartMapMaker();
 			}
-	        }
+		}
 	
-	        [HarmonyPostfix]
-	        [HarmonyPatch(typeof(BuildAction), nameof(BuildAction.ExecuteDefault))]
-	        private static void BuildAction_ExecuteDefault(BuildAction __instance, GameState state)
-	        {
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(BuildAction), nameof(BuildAction.ExecuteDefault))]
+		private static void BuildAction_ExecuteDefault(BuildAction __instance, GameState state)
+		{
 			TileData tile = state.Map.GetTile(__instance.Coordinates);
 			ImprovementData improvementData;
 			PlayerState playerState;
@@ -58,7 +58,7 @@ namespace PolyMod
 				{
 					if (improvementData.type == ImprovementData.Type.City)
 					{
-					tile.improvement.level = 1;
+						tile.improvement.level = 1;
 					}
 					if (improvementData.HasAbility((ImprovementAbility.Type)600))
 					{
@@ -66,8 +66,8 @@ namespace PolyMod
 					}
 				}
 			}
-	        }
-	        private static void StartMapMaker()
+		}
+		private static void StartMapMaker()
 		{
 			isInMapMaker = true;
 			GameSettings gameSettings = new GameSettings();
@@ -88,9 +88,9 @@ namespace PolyMod
 			//}, "gamesettings.creatingworld", null, null);
 			GameManager.Instance.CreateSinglePlayerGame();
 		}
-	
-	        public static void BuildMapFile(string name) //this method is polniy pizdec
-	        {
+
+		public static void BuildMapFile(string name) //this method is polniy pizdec
+		{
 			string mapString = "{\n";
 			mapString += "\t" + "\"size\": " + Math.Sqrt(GameManager.GameState.Map.Tiles.Length).ToString() + "," + "\n";
 			mapString += "\t\"map\": [\n";
@@ -144,9 +144,9 @@ namespace PolyMod
 			mapString += "}";
 			File.WriteAllText(Path.Combine(Plugin.MAPS_PATH, name), mapString);
 			UI.active = false;
-	        }
-	
-	        [HarmonyPrefix]
+		}
+
+		[HarmonyPrefix]
 		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.Generate))]
 		private static void MapGenerator_Generate(ref GameState state, ref MapGeneratorSettings settings)
 		{
@@ -164,14 +164,14 @@ namespace PolyMod
 		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.GeneratePlayerCapitalPositions))]
 		private static void MapGenerator_GeneratePlayerCapitalPositions(ref Il2CppSystem.Collections.Generic.List<int> __result)
 		{
-	            if (isInMapMaker)
-	            {
-	                Il2CppSystem.Collections.Generic.List<int> list = __result;
-	                list.Clear();
-	                list.Add(-1);
-			__result = list;
-	            }
-	            __result = GetCapitals(__result);
+			if (isInMapMaker)
+			{
+				Il2CppSystem.Collections.Generic.List<int> list = __result;
+				list.Clear();
+				list.Add(-1);
+				__result = list;
+			}
+			__result = GetCapitals(__result);
 		}
 
 		[HarmonyPostfix]
@@ -273,14 +273,14 @@ namespace PolyMod
 			_map = null;
 		}
 
-        	private static Il2CppSystem.Collections.Generic.List<int> GetCapitals(Il2CppSystem.Collections.Generic.List<int> originalCapitals)
+		private static Il2CppSystem.Collections.Generic.List<int> GetCapitals(Il2CppSystem.Collections.Generic.List<int> originalCapitals)
 		{
 			if (_map == null || _map["capitals"] == null)
 			{
 				return originalCapitals;
 			}
-            		JArray jcapitals = _map["capitals"].Cast<JArray>();
-            		Il2CppSystem.Collections.Generic.List<int> capitals = new();
+			JArray jcapitals = _map["capitals"].Cast<JArray>();
+			Il2CppSystem.Collections.Generic.List<int> capitals = new();
 			for (int i = 0; i < jcapitals.Count; i++)
 			{
 				capitals.Add((int)jcapitals[i]);
@@ -307,9 +307,11 @@ namespace PolyMod
 
 		internal static void Init()
 		{
-            		Directory.CreateDirectory(Plugin.MAPS_PATH);
+			Directory.CreateDirectory(Plugin.MAPS_PATH);
 			EnumCache<MapPreset>.AddMapping("Custom", (MapPreset)500);
-	        }
+			EnumCache<ImprovementAbility.Type>.AddMapping("climatesetter", (ImprovementAbility.Type)600);
+			EnumCache<ImprovementAbility.Type>.AddMapping("climatesetter", (ImprovementAbility.Type)600);
+		}
 
 		private static void PostGenerate(ref GameState state)
 		{
@@ -393,7 +395,7 @@ namespace PolyMod
 			_map = null;
 		}
 
-        	private static void OnCustomMapChanged(int index)
+		private static void OnCustomMapChanged(int index)
 		{
 			_map = JObject.Parse(File.ReadAllText(Directory.GetFiles(Plugin.MAPS_PATH, "*.json")[index]));
 		}
