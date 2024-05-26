@@ -91,10 +91,10 @@ namespace PolyMod
 		{
 			if (int.TryParse(polymodPopup.inputfield.text, out int _))
 			{
-                for (int i = 0; i < disabledButtons.Count(); i++)
-                {
-                    polymodPopup.Buttons[disabledButtons[i]].ButtonEnabled = (!string.IsNullOrEmpty(polymodPopup.inputfield.text) && polymodPopup.inputfield.text.Length <= 10);
-                }
+		                for (int i = 0; i < disabledButtons.Count(); i++)
+		                {
+		                    polymodPopup.Buttons[disabledButtons[i]].ButtonEnabled = (!string.IsNullOrEmpty(polymodPopup.inputfield.text) && polymodPopup.inputfield.text.Length <= 10);
+		                }
 				inputValue = int.Parse(polymodPopup.inputfield.text);
 			}
 			else
@@ -102,7 +102,7 @@ namespace PolyMod
 				for (int i = 0; i < disabledButtons.Count(); i++)
 				{
 					polymodPopup.Buttons[disabledButtons[i]].ButtonEnabled = false;
-                }
+                		}
 			}
 		}
 
@@ -115,13 +115,13 @@ namespace PolyMod
 
 			if (GameManager.Instance.isLevelLoaded)
 			{
-                if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
-                {
-                    popupButtons.Add(new PopupButtonData("GET STARS", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
-                    disabledButtons.Add(popupButtons.Count() - 1);
-                    popupButtons.Add(new PopupButtonData("REVEAL MAP", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapRevealButtonClicked, -1, true, null));
-                }
-                if (GameManager.GameState.Settings.GameType == GameType.PassAndPlay && GameManager.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
+		                if (GameManager.GameState.Settings.GameType == GameType.SinglePlayer || GameManager.GameState.Settings.GameType == GameType.PassAndPlay)
+		                {
+		                    popupButtons.Add(new PopupButtonData("GET STARS", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnGetStarsButtonClicked, -1, true, null));
+		                    disabledButtons.Add(popupButtons.Count() - 1);
+		                    popupButtons.Add(new PopupButtonData("REVEAL MAP", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapRevealButtonClicked, -1, true, null));
+		                }
+                		if (GameManager.GameState.Settings.GameType == GameType.PassAndPlay && GameManager.GameState.Settings.GameName.StartsWith(ReplayResumer.nameStart))
 				{
 					width += 250;
 					popupButtons.Add(new PopupButtonData("BACK TO REPLAY", PopupBase.PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnBackToReplayButtonClicked, -1, true, null));
@@ -130,14 +130,14 @@ namespace PolyMod
 				{
 					popupButtons.Add(new PopupButtonData("RESUME REPLAY", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnResumeButtonClicked, -1, true, null));
 				}
-                if (MapManager.isInMapMaker)
-                {
-                    width += 750;
-                    popupButtons.Add(new PopupButtonData("SAVE MAP", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapSaveButtonClicked, -1, true, null));
-                    popupButtons.Add(new PopupButtonData("CHANGE CLIMATE", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnChangeClimateButtonClicked, -1, true, null));
-                    disabledButtons.Add(popupButtons.Count() - 1);
-                }
-            }
+		                if (MapManager.isInMapMaker)
+		                {
+		                    width += 750;
+		                    popupButtons.Add(new PopupButtonData("SAVE MAP", PopupButtonData.States.None, (UIButtonBase.ButtonAction)OnMapSaveButtonClicked, -1, true, null));
+		                    popupButtons.Add(new PopupButtonData("CHANGE CLIMATE", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnChangeClimateButtonClicked, -1, true, null));
+		                    disabledButtons.Add(popupButtons.Count() - 1);
+		                }
+            		}
 			else
 			{
 				popupButtons.Add(new PopupButtonData("CHANGE VERSION", PopupButtonData.States.Disabled, (UIButtonBase.ButtonAction)OnChangeVersionButtonClicked, -1, true, null));
@@ -195,19 +195,19 @@ namespace PolyMod
 				active = false;
 			}
 
-            void OnMapSaveButtonClicked(int buttonId, BaseEventData eventData)
-            {
-                MapManager.BuildMapFile("testmap.json");
-                NotificationManager.Notify("Map has been saved.", header, null, null);
-                active = false;
-            }
-
-            void OnChangeClimateButtonClicked(int buttonId, BaseEventData eventData)
-            {
-                MapManager.chosenClimate = inputValue;
-                NotificationManager.Notify($"Next tile`s climate changed to {inputValue}.", header, null, null);
-                active = false;
-            }
-        }
+			void OnMapSaveButtonClicked(int buttonId, BaseEventData eventData)
+			{
+				MapManager.BuildMapFile("testmap.json");
+				NotificationManager.Notify("Map has been saved.", header, null, null);
+				active = false;
+			}
+			
+			void OnChangeClimateButtonClicked(int buttonId, BaseEventData eventData)
+			{
+				MapManager.chosenClimate = inputValue;
+				NotificationManager.Notify($"Next tile`s climate changed to {inputValue}.", header, null, null);
+				active = false;
+			}
+        	}
 	}
 }
