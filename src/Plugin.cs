@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using MoonSharp.Interpreter;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -57,6 +58,15 @@ namespace PolyMod
 			if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !UI.active)
 			{
 				UI.Show();
+			}
+
+			foreach (var script in ModLoader.scripts)
+			{
+				object? dynValue = script.Globals["update"];
+				if (dynValue != null)
+				{
+					script.Call(dynValue);
+				}
 			}
 		}
 

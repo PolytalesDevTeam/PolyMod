@@ -2,11 +2,10 @@
 using HarmonyLib;
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Microsoft.CSharp.RuntimeBinder;
 using Il2CppSystem.Linq;
+using MoonSharp.Interpreter;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
-using PolytopiaBackendBase.Game;
 using System.IO.Compression;
 using UnityEngine;
 
@@ -14,6 +13,8 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
+		internal static List<Script> scripts = new();
+
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
@@ -188,8 +189,8 @@ namespace PolyMod
 			foreach (var sprite in sprites)
 			{
 				Sprite newSprite = Sprite.Create(
-					customAtlas, 
-					rects[sprites.Values.ToList().IndexOf(sprite.Value)], 
+					customAtlas,
+					rects[sprites.Values.ToList().IndexOf(sprite.Value)],
 					new(0.5f, 0.5f)
 				);
 				__instance.cachedSprites[atlas][sprite.Key] = newSprite;
@@ -224,7 +225,13 @@ namespace PolyMod
 				{
 					string name = entry.ToString();
 
-					if (Path.GetFileName(name) == "patch.json") 
+					if (Path.GetFileName(name) == "script.lua")
+					{
+						Script script = new();
+						script.DoString(new StreamReader(entry.Open()).ReadToEnd());
+						scripts.Add(script);
+					}
+					if (Path.GetFileName(name) == "patch.json")
 					{
 						Patch(gld, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
 					}

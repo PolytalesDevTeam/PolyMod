@@ -14,11 +14,23 @@
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.674" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+	  
 	<Reference Include="lib\*.dll" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y /s $(TargetPath) &quot;C:\Program Files (x86)\Steam\steamapps\common\The Battle of Polytopia\BepInEx\plugins\&quot;&#xD;&#xA;start steam://rungameid/874390" />
+  <Target Name="AB" AfterTargets="AfterBuild">
+    <ItemGroup>
+		<InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
+		<InputAssemblies Include="$(OutputPath)\MoonSharp.Interpreter.dll" />
+		<LibraryPath Include="%(ReferencePathWithRefAssemblies.RelativeDir)" />
+	</ItemGroup>
+	  
+	<ILRepack LibraryPath="@(LibraryPath)" OutputFile="$(OutputPath)\$(AssemblyName).dll" InputAssemblies="@(InputAssemblies)" Parallel="true" Internalize="true" />
+	<Exec Command="xcopy /y /s $(TargetPath) &quot;C:\Program Files (x86)\Steam\steamapps\common\The Battle of Polytopia\BepInEx\plugins\&quot;&#xD;&#xA;start steam://rungameid/874390" />
   </Target>
 
 </Project>
