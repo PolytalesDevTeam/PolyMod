@@ -11,144 +11,142 @@ namespace PolyMod
 {
 	internal static class MapManager
 	{
-        public static bool isInMapMaker = false;
-        public static int chosenClimate = 1;
-        //public static UnityEngine.UI.Image mapMakerIcon;
-        private static JObject? _map;
+		public static bool isInMapMaker = false;
+		public static int chosenClimate = 1;
+		//public static UnityEngine.UI.Image mapMakerIcon;
+		private static JObject? _map;
 		private static bool _isListInstantiated = false;
 		private static UIHorizontalList _customMapsList = new() { };
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.UpdateListLayout))]
-        private static void GameModeScreen_UpdateListLayout(GameModeScreen __instance)
-        {
+		
+	        [HarmonyPrefix]
+	        [HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.UpdateListLayout))]
+	        private static void GameModeScreen_UpdateListLayout(GameModeScreen __instance)
+	        {
 			__instance.buttons[__instance.buttons.Length - 1].text = "MAP MAKER";
-            __instance.buttons[__instance.buttons.Length - 1].description.Text = "Create your own game maps and let your imagination flourish!";
+			__instance.buttons[__instance.buttons.Length - 1].description.Text = "Create your own game maps and let your imagination flourish!";
 			//__instance.buttons[__instance.buttons.Length - 1].icon = mapMakerIcon; 
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.Init))]
-        private static void GameModeScreen_Init(GameModeScreen __instance)
-        {
-            GamemodeButton prefab = __instance.buttons[2];
-            GamemodeButton button = UnityEngine.GameObject.Instantiate(prefab);
+	        }
+	
+	        [HarmonyPrefix]
+	        [HarmonyPatch(typeof(GameModeScreen), nameof(GameModeScreen.Init))]
+	        private static void GameModeScreen_Init(GameModeScreen __instance)
+	        {
+			GamemodeButton prefab = __instance.buttons[2];
+	            	GamemodeButton button = UnityEngine.GameObject.Instantiate(prefab);
 			button.transform.localScale = new(1.1f, 1.1f);
-            List<GamemodeButton> list = __instance.buttons.ToList();
+	            	List<GamemodeButton> list = __instance.buttons.ToList();
 			list.Add(button);
-            __instance.buttons = list.ToArray();
+	            	__instance.buttons = list.ToArray();
 			__instance.buttons[__instance.buttons.Length-1].OnClicked += (UIButtonBase.ButtonAction)MapMakerButton_OnClicked;
-
-            void MapMakerButton_OnClicked(int id, BaseEventData eventData = null)
-            {
-                StartMapMaker();
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(BuildAction), nameof(BuildAction.ExecuteDefault))]
-        private static void BuildAction_ExecuteDefault(BuildAction __instance, GameState state)
-        {
-            TileData tile = state.Map.GetTile(__instance.Coordinates);
-            ImprovementData improvementData;
-            PlayerState playerState;
-            if (tile != null && state.GameLogicData.TryGetData(__instance.Type, out improvementData) && state.TryGetPlayer(__instance.PlayerId, out playerState))
-            {
-                if (improvementData.type != ImprovementData.Type.Road)
-                {
-                    if (improvementData.type == ImprovementData.Type.City)
-                    {
-                        tile.improvement.level = 1;
-                    }
-                    if (improvementData.HasAbility((ImprovementAbility.Type)600))
-                    {
-                        tile.climate = chosenClimate;
-                    }
-                }
-            }
-        }
-        private static void StartMapMaker()
-        {
+	
+			void MapMakerButton_OnClicked(int id, BaseEventData eventData = null)
+			{
+				StartMapMaker();
+			}
+	        }
+	
+	        [HarmonyPostfix]
+	        [HarmonyPatch(typeof(BuildAction), nameof(BuildAction.ExecuteDefault))]
+	        private static void BuildAction_ExecuteDefault(BuildAction __instance, GameState state)
+	        {
+			TileData tile = state.Map.GetTile(__instance.Coordinates);
+			ImprovementData improvementData;
+			PlayerState playerState;
+			if (tile != null && state.GameLogicData.TryGetData(__instance.Type, out improvementData) && state.TryGetPlayer(__instance.PlayerId, out playerState))
+			{
+				if (improvementData.type != ImprovementData.Type.Road)
+				{
+					if (improvementData.type == ImprovementData.Type.City)
+					{
+					tile.improvement.level = 1;
+					}
+					if (improvementData.HasAbility((ImprovementAbility.Type)600))
+					{
+						tile.climate = chosenClimate;
+					}
+				}
+			}
+	        }
+	        private static void StartMapMaker()
+		{
 			isInMapMaker = true;
-            GameSettings gameSettings = new GameSettings();
-            gameSettings.BaseGameMode = GameMode.Custom;
-            gameSettings.SetUnlockedTribes(GameManager.GetPurchaseManager().GetUnlockedTribes(false));
-            gameSettings.mapPreset = MapPreset.Dryland;
+			GameSettings gameSettings = new GameSettings();
+			gameSettings.BaseGameMode = GameMode.Custom;
+			gameSettings.SetUnlockedTribes(GameManager.GetPurchaseManager().GetUnlockedTribes(false));
+			gameSettings.mapPreset = MapPreset.Dryland;
 			gameSettings.mapSize = 30;
-            GameManager.StartingTribe = (TribeData.Type)1001;
-            GameManager.StartingTribeMix = TribeData.Type.None;
-            GameManager.StartingSkin = SkinType.Default;
-            GameManager.PreliminaryGameSettings = gameSettings;
-            GameManager.PreliminaryGameSettings.OpponentCount = 0;
-            GameManager.PreliminaryGameSettings.Difficulty = GameSettings.Difficulties.Easy;
-            //UIBlackFader.FadeIn(0.5f, async delegate
-            //{
-            //    DOTween.KillAll(false);
-            //    await GameManager.Instance.CreateSinglePlayerGame();
-            //}, "gamesettings.creatingworld", null, null);
-            GameManager.Instance.CreateSinglePlayerGame();
-        }
-
-        public static void BuildMapFile(string name) //this method is polniy pizdec
-        {
-            string mapString = "{\n";
-            mapString += "\t" + "\"size\": " + Math.Sqrt(GameManager.GameState.Map.Tiles.Length).ToString() + "," + "\n";
-            mapString += "\t\"map\": [\n";
-            for (int i = 0; i < GameManager.GameState.Map.Tiles.Length; i++)
-            {
-                mapString += "\t\t{\n";
-                //Console.Write(i);
-                if (GameManager.GameState.Map.Tiles[i].coordinates != null)
-                {
-                    Console.Write(GameManager.GameState.Map.Tiles[i].coordinates);
-                }
-                if (GameManager.GameState.Map.Tiles[i].terrain != null)
-                {
-                    mapString += "\n";
-                    // Console.Write(GameManager.GameState.Map.Tiles[i].terrain);
-                    mapString += "\t\t\t" + "\"terrain\": " + "\"" + GameManager.GameState.Map.Tiles[i].terrain.ToString().ToLower() + "\"";
-                }
-                if (GameManager.GameState.Map.Tiles[i].climate != null)
-                {
-                    mapString += ",\n";
-                    //Console.Write(GameManager.GameState.Map.Tiles[i].climate);
-                    mapString += "\t\t\t" + "\"climate\": " + GameManager.GameState.Map.Tiles[i].climate.ToString().ToLower();
-                }
-                if (GameManager.GameState.Map.Tiles[i].improvement != null)
-                {
-                    if (GameManager.GameState.Map.Tiles[i].improvement.type.ToString().ToLower() != "lighthouse")
-                    {
-                        mapString += ",\n";
-                        //Console.Write(GameManager.GameState.Map.Tiles[i].improvement.type);
-                        mapString += "\t\t\t" + "\"improvement\": " + "\"" + GameManager.GameState.Map.Tiles[i].improvement.type.ToString().ToLower() + "\"";
-                    }
-
-                }
-                if (GameManager.GameState.Map.Tiles[i].resource != null)
-                {
-                    mapString += ",\n";
-                    //Console.Write(GameManager.GameState.Map.Tiles[i].resource.type);
-                    mapString += "\t\t\t" + "\"resource\": " + "\"" + GameManager.GameState.Map.Tiles[i].resource.type.ToString().ToLower() + "\"";
-
-                }
-                if (i == GameManager.GameState.Map.Tiles.Length - 1)
-                {
-                    mapString += "\n";
-                    mapString += "\t\t}\n";
-                }
-                else
-                {
-                    mapString += "\n";
-                    mapString += "\t\t},\n";
-                }
-            }
-            mapString += "\t]\n";
-            mapString += "}";
-            File.WriteAllText(Path.Combine(Plugin.MAPS_PATH, name), mapString);
-            UI.active = false;
-        }
-
-        [HarmonyPrefix]
+			GameManager.StartingTribe = (TribeData.Type)1001;
+			GameManager.StartingTribeMix = TribeData.Type.None;
+			GameManager.StartingSkin = SkinType.Default;
+			GameManager.PreliminaryGameSettings = gameSettings;
+			GameManager.PreliminaryGameSettings.OpponentCount = 0;
+			GameManager.PreliminaryGameSettings.Difficulty = GameSettings.Difficulties.Easy;
+			//UIBlackFader.FadeIn(0.5f, async delegate
+			//{
+			//    DOTween.KillAll(false);
+			//    await GameManager.Instance.CreateSinglePlayerGame();
+			//}, "gamesettings.creatingworld", null, null);
+			GameManager.Instance.CreateSinglePlayerGame();
+		}
+	
+	        public static void BuildMapFile(string name) //this method is polniy pizdec
+	        {
+			string mapString = "{\n";
+			mapString += "\t" + "\"size\": " + Math.Sqrt(GameManager.GameState.Map.Tiles.Length).ToString() + "," + "\n";
+			mapString += "\t\"map\": [\n";
+			for (int i = 0; i < GameManager.GameState.Map.Tiles.Length; i++)
+			{
+				mapString += "\t\t{\n";
+				//Console.Write(i);
+				if (GameManager.GameState.Map.Tiles[i].coordinates != null)
+				{
+					Console.Write(GameManager.GameState.Map.Tiles[i].coordinates);
+				}
+				if (GameManager.GameState.Map.Tiles[i].terrain != null)
+				{
+					mapString += "\n";
+					// Console.Write(GameManager.GameState.Map.Tiles[i].terrain);
+					mapString += "\t\t\t" + "\"terrain\": " + "\"" + GameManager.GameState.Map.Tiles[i].terrain.ToString().ToLower() + "\"";
+				}
+				if (GameManager.GameState.Map.Tiles[i].climate != null)
+				{
+					mapString += ",\n";
+					//Console.Write(GameManager.GameState.Map.Tiles[i].climate);
+					mapString += "\t\t\t" + "\"climate\": " + GameManager.GameState.Map.Tiles[i].climate.ToString().ToLower();
+				}
+				if (GameManager.GameState.Map.Tiles[i].improvement != null)
+				{
+					if (GameManager.GameState.Map.Tiles[i].improvement.type.ToString().ToLower() != "lighthouse")
+					{
+					mapString += ",\n";
+					//Console.Write(GameManager.GameState.Map.Tiles[i].improvement.type);
+					mapString += "\t\t\t" + "\"improvement\": " + "\"" + GameManager.GameState.Map.Tiles[i].improvement.type.ToString().ToLower() + "\"";
+					}
+				}
+				if (GameManager.GameState.Map.Tiles[i].resource != null)
+				{
+					mapString += ",\n";
+					//Console.Write(GameManager.GameState.Map.Tiles[i].resource.type);
+					mapString += "\t\t\t" + "\"resource\": " + "\"" + GameManager.GameState.Map.Tiles[i].resource.type.ToString().ToLower() + "\"";
+				}
+				if (i == GameManager.GameState.Map.Tiles.Length - 1)
+				{
+					mapString += "\n";
+					mapString += "\t\t}\n";
+				}
+				else
+				{
+					mapString += "\n";
+					mapString += "\t\t},\n";
+				}
+			}
+			mapString += "\t]\n";
+			mapString += "}";
+			File.WriteAllText(Path.Combine(Plugin.MAPS_PATH, name), mapString);
+			UI.active = false;
+	        }
+	
+	        [HarmonyPrefix]
 		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.Generate))]
 		private static void MapGenerator_Generate(ref GameState state, ref MapGeneratorSettings settings)
 		{
@@ -166,14 +164,14 @@ namespace PolyMod
 		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.GeneratePlayerCapitalPositions))]
 		private static void MapGenerator_GeneratePlayerCapitalPositions(ref Il2CppSystem.Collections.Generic.List<int> __result)
 		{
-            if (isInMapMaker)
-            {
-                Il2CppSystem.Collections.Generic.List<int> list = __result;
-                list.Clear();
-                list.Add(-1);
-				__result = list;
-            }
-            __result = GetCapitals(__result);
+	            if (isInMapMaker)
+	            {
+	                Il2CppSystem.Collections.Generic.List<int> list = __result;
+	                list.Clear();
+	                list.Add(-1);
+			__result = list;
+	            }
+	            __result = GetCapitals(__result);
 		}
 
 		[HarmonyPostfix]
@@ -275,14 +273,14 @@ namespace PolyMod
 			_map = null;
 		}
 
-        private static Il2CppSystem.Collections.Generic.List<int> GetCapitals(Il2CppSystem.Collections.Generic.List<int> originalCapitals)
+        	private static Il2CppSystem.Collections.Generic.List<int> GetCapitals(Il2CppSystem.Collections.Generic.List<int> originalCapitals)
 		{
 			if (_map == null || _map["capitals"] == null)
 			{
 				return originalCapitals;
 			}
-            JArray jcapitals = _map["capitals"].Cast<JArray>();
-            Il2CppSystem.Collections.Generic.List<int> capitals = new();
+            		JArray jcapitals = _map["capitals"].Cast<JArray>();
+            		Il2CppSystem.Collections.Generic.List<int> capitals = new();
 			for (int i = 0; i < jcapitals.Count; i++)
 			{
 				capitals.Add((int)jcapitals[i]);
@@ -309,9 +307,9 @@ namespace PolyMod
 
 		internal static void Init()
 		{
-            Directory.CreateDirectory(Plugin.MAPS_PATH);
+            		Directory.CreateDirectory(Plugin.MAPS_PATH);
 			EnumCache<MapPreset>.AddMapping("Custom", (MapPreset)500);
-        }
+	        }
 
 		private static void PostGenerate(ref GameState state)
 		{
@@ -395,7 +393,7 @@ namespace PolyMod
 			_map = null;
 		}
 
-        private static void OnCustomMapChanged(int index)
+        	private static void OnCustomMapChanged(int index)
 		{
 			_map = JObject.Parse(File.ReadAllText(Directory.GetFiles(Plugin.MAPS_PATH, "*.json")[index]));
 		}
