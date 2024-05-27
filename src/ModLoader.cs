@@ -228,6 +228,7 @@ namespace PolyMod
 					if (Path.GetFileName(name) == "script.lua")
 					{
 						Script script = new();
+						script.Globals["patch"] = (Action<string, string, string>)Patch_;
 						script.DoString(new StreamReader(entry.Open()).ReadToEnd());
 						scripts.Add(script);
 					}
@@ -337,6 +338,27 @@ namespace PolyMod
 			Texture2D texture = new(1, 1);
 			texture.LoadImage(data);
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
+		}
+
+		public static void Test()
+		{
+			Console.WriteLine("You were hooked 🤣");
+		}
+
+		public static void TestC()
+		{
+			Console.WriteLine("I was called 🤯");
+		}
+
+		private static void Spoof() 
+		{
+			//called on ANY lua patch
+		}
+
+		private static void Patch_(string type, string method, string patch)
+		{
+            new Harmony(Guid.NewGuid().ToString())
+                .Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Spoof))));
 		}
 	}
 }
