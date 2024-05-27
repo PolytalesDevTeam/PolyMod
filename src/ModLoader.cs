@@ -16,7 +16,7 @@ namespace PolyMod
 	internal static class ModLoader
 	{
 		internal static List<Script> scripts = new();
-		internal static Dictionary<string, string> methodsDict = new();
+		internal static Dictionary<string, Tuple<string, string>> methodsDict = new();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -353,26 +353,25 @@ namespace PolyMod
 			Console.WriteLine("I was called 🤯");
 		}
 
-		private static void Patcher() 
+		private static void Patcher()
 		{
 			MethodBase caller = new StackTrace().GetFrame(1).GetMethod();
-			string callerMethodName = caller.Name.Replace("::", "|");
+			string callerMethodName = caller.Name.Replace("::", ".");
 
 			Console.WriteLine("The caller method is: " + callerMethodName);
 
 			for (int i = 0; i < methodsDict.Count; i++)
 			{
 				var element = methodsDict.ElementAt(i);
-				if (callerMethodName.Contains(element.Key))
+				if (callerMethodName.Contains(element.Value.Item1 + '.' + element.Value.Item2))
 				{
-					string[] words = (element.Value.Split('|'));
-					InvokeStringMethod(words[0], words[1]);
+					InvokeStringMethod(element.Value.Item1, element.Value.Item2); //тут вместо этого зови луа метод в element.Key
 				}
 			}
 			//called on ANY lua patch
 		}
 
-		public static string InvokeStringMethod(string typeName, string methodName)
+		public static string InvokeStringMethod(string typeName, string methodName)//can be deleted
 		{
 			Type calledType = Type.GetType(typeName);
 
@@ -387,9 +386,9 @@ namespace PolyMod
 			return s;
 		}
 		
-		private static void Patch_(string type, string method, string patch)
+		private static void Patch_(string patch, string type, string method)
 		{
-			methodsDict[type + '|' + method] = type + '|' + patch;
+			methodsDict[patch] = new(type, method);
 			new Harmony(Guid.NewGuid().ToString()).Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Patcher))));
 		}
 	}
