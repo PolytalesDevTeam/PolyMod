@@ -6,7 +6,9 @@ using Il2CppSystem.Linq;
 using MoonSharp.Interpreter;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
+using System.Diagnostics;
 using System.IO.Compression;
+using System.Reflection;
 using UnityEngine;
 
 namespace PolyMod
@@ -14,6 +16,7 @@ namespace PolyMod
 	internal static class ModLoader
 	{
 		internal static List<Script> scripts = new();
+		internal static Dictionary<string, string> methodsDict = new();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -350,15 +353,44 @@ namespace PolyMod
 			Console.WriteLine("I was called 🤯");
 		}
 
-		private static void Spoof() 
+		private static void Patcher() 
 		{
+			MethodBase caller = new StackTrace().GetFrame(1).GetMethod();
+			string callerMethodName = caller.Name.Replace("::", "|");
+
+			Console.WriteLine("The caller method is: " + callerMethodName);
+
+			for (int i = 0; i < methodsDict.Count; i++)
+			{
+				var element = methodsDict.ElementAt(i);
+				if (callerMethodName.Contains(element.Key))
+				{
+					string[] words = (element.Value.Split('|'));
+					InvokeStringMethod(words[0], words[1]);
+				}
+			}
 			//called on ANY lua patch
 		}
 
+		public static string InvokeStringMethod(string typeName, string methodName)
+		{
+			Type calledType = Type.GetType(typeName);
+
+			String s = (String)calledType.InvokeMember(
+				methodName,
+				BindingFlags.InvokeMethod | BindingFlags.Public |
+					BindingFlags.Static,
+				null,
+				null,
+				null);
+
+			return s;
+		}
+		
 		private static void Patch_(string type, string method, string patch)
 		{
-            new Harmony(Guid.NewGuid().ToString())
-                .Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Spoof))));
+			methodsDict[type + '|' + method] = type + '|' + patch;
+			new Harmony(Guid.NewGuid().ToString()).Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Patcher))));
 		}
 	}
 }

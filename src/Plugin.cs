@@ -58,7 +58,8 @@ namespace PolyMod
 			if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !UI.active)
 			{
 				UI.Show();
-			}
+				ModLoader.TestC();
+            }
 
 			foreach (var script in ModLoader.scripts)
 			{
