@@ -231,7 +231,7 @@ namespace PolyMod
 					if (Path.GetFileName(name) == "script.lua")
 					{
 						Script script = new();
-						script.Globals["patch"] = (Action<string, string, string>)Patch_;
+						script.Globals["patch"] = (Action<string, string, string>)ApiPatch;
 						script.DoString(new StreamReader(entry.Open()).ReadToEnd());
 						scripts.Add(script);
 					}
@@ -355,38 +355,17 @@ namespace PolyMod
 
 		private static void Patcher()
 		{
-			MethodBase caller = new StackTrace().GetFrame(1).GetMethod();
-			string callerMethodName = caller.Name.Replace("::", ".");
-
-			Console.WriteLine("The caller method is: " + callerMethodName);
-
 			for (int i = 0; i < methodsDict.Count; i++)
 			{
 				var element = methodsDict.ElementAt(i);
-				if (callerMethodName.Contains(element.Value.Item1 + '.' + element.Value.Item2))
+				if (new StackTrace().GetFrame(1).GetMethod().Name.Contains(element.Value.Item1 + "::" + element.Value.Item2))
 				{
-					InvokeStringMethod(element.Value.Item1, element.Value.Item2); //тут вместо этого зови луа метод в element.Key
+					
 				}
 			}
-			//called on ANY lua patch
-		}
-
-		public static string InvokeStringMethod(string typeName, string methodName)//can be deleted
-		{
-			Type calledType = Type.GetType(typeName);
-
-			String s = (String)calledType.InvokeMember(
-				methodName,
-				BindingFlags.InvokeMethod | BindingFlags.Public |
-					BindingFlags.Static,
-				null,
-				null,
-				null);
-
-			return s;
 		}
 		
-		private static void Patch_(string patch, string type, string method)
+		private static void ApiPatch(string patch, string type, string method)
 		{
 			methodsDict[patch] = new(type, method);
 			new Harmony(Guid.NewGuid().ToString()).Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Patcher))));
