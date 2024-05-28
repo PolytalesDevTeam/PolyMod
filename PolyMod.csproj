@@ -25,7 +25,6 @@
   <Target Name="AB" AfterTargets="AfterBuild">
     <ItemGroup>
 		<InputAssemblies Include="$(OutputPath)\$(AssemblyName).dll" />
-		<InputAssemblies Include="$(OutputPath)\MoonSharp.Interpreter.dll" />
 		<LibraryPath Include="%(ReferencePathWithRefAssemblies.RelativeDir)" />
 	</ItemGroup>
 	  

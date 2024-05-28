@@ -3,20 +3,16 @@ using HarmonyLib;
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
-using MoonSharp.Interpreter;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
-using System.Diagnostics;
 using System.IO.Compression;
+using System.Reflection;
 using UnityEngine;
 
 namespace PolyMod
 {
 	internal static class ModLoader
 	{
-		private static Script _script;
-		private static List<Script> _scripts = new();
-		private static Dictionary<Script, Tuple<string, string, string>> _patches = new();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -228,13 +224,13 @@ namespace PolyMod
 				{
 					string name = entry.ToString();
 
-					if (Path.GetFileName(name) == "script.lua")
+					if (Path.GetFileName(name) == "script.dll")
 					{
-						Script script = new();
-						_script = script;
-						script.Globals["patch"] = (Action<string, string, string>)ApiPatch;
-						script.DoString(new StreamReader(entry.Open()).ReadToEnd());
-						_scripts.Add(script);
+						Assembly assembly = Assembly.Load(entry.ReadBytes());
+						foreach (Type type in assembly.GetTypes())
+						{
+                            type.GetMethod("Load")?.Invoke(null, null);
+                        }
 					}
 					if (Path.GetFileName(name) == "patch.json")
 					{
@@ -342,26 +338,6 @@ namespace PolyMod
 			Texture2D texture = new(1, 1);
 			texture.LoadImage(data);
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
-		}
-
-		private static void Patcher()
-		{
-			for (int i = 0; i < _patches.Count; i++)
-			{
-				var element = _patches.ElementAt(i);
-				Console.WriteLine(element.Value.Item2);
-				Console.WriteLine(element.Value.Item3);
-				if (new StackTrace().GetFrame(1).GetMethod().Name.Contains(element.Value.Item2 + "::" + element.Value.Item3))
-				{
-					element.Key.Call(element.Key.Globals[element.Value.Item1]);	
-				}
-			}
-		}
-		
-		private static void ApiPatch(string patch, string type, string method)
-		{
-			_patches[_script] = new(patch, type, method);
-			new Harmony(Guid.NewGuid().ToString()).Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Patcher))));
 		}
 	}
 }
