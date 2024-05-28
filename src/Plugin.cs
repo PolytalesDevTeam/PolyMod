@@ -58,17 +58,7 @@ namespace PolyMod
 			if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Tab) && !UI.active)
 			{
 				UI.Show();
-				ModLoader.TestC();
             }
-
-			foreach (var script in ModLoader.scripts)
-			{
-				object? dynValue = script.Globals["update"];
-				if (dynValue != null)
-				{
-					script.Call(dynValue);
-				}
-			}
 		}
 
 		internal static string GetJTokenName(JToken token, int n = 1)

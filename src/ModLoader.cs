@@ -8,15 +8,15 @@ using Newtonsoft.Json.Linq;
 using Polytopia.Data;
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Reflection;
 using UnityEngine;
 
 namespace PolyMod
 {
 	internal static class ModLoader
 	{
-		internal static List<Script> scripts = new();
-		internal static Dictionary<string, Tuple<string, string>> methodsDict = new();
+		private static Script _script;
+		private static List<Script> _scripts = new();
+		private static Dictionary<Script, Tuple<string, string, string>> _patches = new();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -231,9 +231,10 @@ namespace PolyMod
 					if (Path.GetFileName(name) == "script.lua")
 					{
 						Script script = new();
+						_script = script;
 						script.Globals["patch"] = (Action<string, string, string>)ApiPatch;
 						script.DoString(new StreamReader(entry.Open()).ReadToEnd());
-						scripts.Add(script);
+						_scripts.Add(script);
 					}
 					if (Path.GetFileName(name) == "patch.json")
 					{
@@ -343,31 +344,23 @@ namespace PolyMod
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
 
-		public static void Test()
-		{
-			Console.WriteLine("You were hooked 🤣");
-		}
-
-		public static void TestC()
-		{
-			Console.WriteLine("I was called 🤯");
-		}
-
 		private static void Patcher()
 		{
-			for (int i = 0; i < methodsDict.Count; i++)
+			for (int i = 0; i < _patches.Count; i++)
 			{
-				var element = methodsDict.ElementAt(i);
-				if (new StackTrace().GetFrame(1).GetMethod().Name.Contains(element.Value.Item1 + "::" + element.Value.Item2))
+				var element = _patches.ElementAt(i);
+				Console.WriteLine(element.Value.Item2);
+				Console.WriteLine(element.Value.Item3);
+				if (new StackTrace().GetFrame(1).GetMethod().Name.Contains(element.Value.Item2 + "::" + element.Value.Item3))
 				{
-					
+					element.Key.Call(element.Key.Globals[element.Value.Item1]);	
 				}
 			}
 		}
 		
 		private static void ApiPatch(string patch, string type, string method)
 		{
-			methodsDict[patch] = new(type, method);
+			_patches[_script] = new(patch, type, method);
 			new Harmony(Guid.NewGuid().ToString()).Patch(AccessTools.Method(Type.GetType(type), method), new(AccessTools.Method(typeof(ModLoader), nameof(Patcher))));
 		}
 	}
