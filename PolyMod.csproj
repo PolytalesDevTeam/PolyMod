@@ -17,8 +17,4 @@
 	  <Reference Include="lib\*.dll" />
   </ItemGroup>
 
-  <Target Name="AB" AfterTargets="AfterBuild">  
-	  <Exec Command="xcopy /y /s $(TargetPath) &quot;C:\Program Files (x86)\Steam\steamapps\common\The Battle of Polytopia\BepInEx\plugins\&quot;&#xD;&#xA;start steam://rungameid/874390" />
-  </Target>
-
 </Project>

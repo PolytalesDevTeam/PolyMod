@@ -18,7 +18,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
 		{
-			Init(rootObject);
+			GameLogicDataModsInit(rootObject);
 		}
 
 		[HarmonyPostfix]
@@ -84,20 +84,20 @@ namespace PolyMod
 			__result = GetSprite(__result, sprite, "");
 		}
 
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHouseAddresses), new Type[] { typeof(int), typeof(string), typeof(SkinType) })]
-		private static void SpriteData_GetHouseAddresses(ref Il2CppReferenceArray<SpriteAddress> __result, int type, string styleId, SkinType skinType)
-		{
-			List<SpriteAddress> sprites = new()
-			{
-				GetSprite(__result[0], "house", styleId, type)
-			};
-			if (skinType != SkinType.Default)
-			{
-				sprites.Add(GetSprite(__result[1], "house", EnumCache<SkinType>.GetName(skinType), type));
-			}
-			__result = sprites.ToArray();
-		}
+		// [HarmonyPostfix]
+		// [HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHouseAddresses), new Type[] { typeof(int), typeof(string), typeof(SkinType) })]
+		// private static void SpriteData_GetHouseAddresses(ref Il2CppReferenceArray<SpriteAddress> __result, int type, string styleId, SkinType skinType)
+		// {
+		// 	List<SpriteAddress> sprites = new()
+		// 	{
+		// 		GetSprite(__result[0], "house", styleId, type)
+		// 	};
+		// 	if (skinType != SkinType.Default)
+		// 	{
+		// 		sprites.Add(GetSprite(__result[1], "house", EnumCache<SkinType>.GetName(skinType), type));
+		// 	}
+		// 	__result = sprites.ToArray();
+		// }
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetAddress))]
@@ -193,7 +193,7 @@ namespace PolyMod
 					new(0.5f, 0.5f)
 				);
 				__instance.cachedSprites[atlas][sprite.Key] = newSprite;
-				__instance.spriteToAtlasName[newSprite] = atlas;
+				//__instance.spriteToAtlasName[newSprite] = atlas;
 			}
 			completion.Invoke(customAtlas);
 			return false;
@@ -211,10 +211,9 @@ namespace PolyMod
 		{
 		}
 
-		private static void Init(JObject gld)
+		public static void PolyscriptsInit()
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
-			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
 
 			foreach (string modname in Directory.GetFiles(Plugin.MODS_PATH, "*.polymod"))
 			{
@@ -232,9 +231,34 @@ namespace PolyMod
                             type.GetMethod("Load")?.Invoke(null, null);
                         }
 					}
+				}
+			}
+		}
+
+		private static void GameLogicDataModsInit(JObject gameLogicData)
+		{
+			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
+
+			foreach (string modname in Directory.GetFiles(Plugin.MODS_PATH, "*.polymod"))
+			{
+				ZipArchive mod = new(File.OpenRead(modname));
+
+				foreach (var entry in mod.Entries)
+				{
+					string name = entry.ToString();
+
 					if (Path.GetFileName(name) == "patch.json")
 					{
-						Patch(gld, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
+						try
+						{
+							Plugin.logger.LogInfo(string.Format("Loading patch.json of {0}", modname));
+							Patch(gameLogicData, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
+						}
+						catch (Exception e)
+						{
+							Plugin.logger.LogWarning(e.Message);
+						}
+						Patch(gameLogicData, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
 					}
 					if (Path.GetExtension(name) == ".png")
 					{
@@ -246,7 +270,7 @@ namespace PolyMod
 						};
 						Sprite sprite = BuildSprite(entry.ReadBytes(), pivot);
 						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
-						GameManager.GetSpriteAtlasManager().spriteToAtlasName.Add(sprite, "Heads");
+						//GameManager.GetSpriteAtlasManager().spriteToAtlasName.Add(sprite, "Heads");
 					}
 				}
 			}
