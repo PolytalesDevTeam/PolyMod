@@ -13,6 +13,7 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
+		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -278,8 +279,6 @@ namespace PolyMod
 
 		private static void Patch(JObject gld, JObject patch)
 		{
-			int idx = Plugin.AUTOIDX_STARTS_FROM;
-
 			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 			{
 				JArray token = jtoken.Cast<JArray>();
@@ -303,35 +302,35 @@ namespace PolyMod
 
 				if (token["idx"] != null && (int)token["idx"] == -1)
 				{
-					++idx;
-					token["idx"] = idx;
+					++_autoidx;
+					token["idx"] = _autoidx;
 					string id = Plugin.GetJTokenName(token);
 
 					switch (Plugin.GetJTokenName(token, 2))
 					{
 						case "tribeData":
-							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)idx);
+							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
 							break;
 						case "terrainData":
-							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)idx);
+							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
 							break;
 						case "resourceData":
-							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)idx);
-							PrefabManager.resources.TryAdd((ResourceData.Type)idx, PrefabManager.resources[ResourceData.Type.Game]);
+							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
+							PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
 							break;
 						case "taskData":
-							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)idx);
+							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
 							break;
 						case "improvementData":
-							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)idx);
-							PrefabManager.improvements.TryAdd((ImprovementData.Type)idx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
+							PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
 							break;
 						case "unitData":
-							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)idx);
-							PrefabManager.units.TryAdd((int)(UnitData.Type)idx, PrefabManager.units[(int)UnitData.Type.Scout]);
+							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
+							PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
 							break;
 						case "techData":
-							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)idx);
+							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
 							break;
 					}
 				}
