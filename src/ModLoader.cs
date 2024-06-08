@@ -14,12 +14,14 @@ namespace PolyMod
 	internal static class ModLoader
 	{
 		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
+		public static List<Tuple<string, JObject>> patchList = new List<Tuple<string, JObject>>();
+		public static List<Tuple<string, byte[]>> spritesList = new List<Tuple<string, byte[]>>();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
 		{
-			GameLogicDataModsInit(rootObject);
+			PatchLoad(rootObject);
 		}
 
 		[HarmonyPostfix]
@@ -212,7 +214,7 @@ namespace PolyMod
 		{
 		}
 
-		public static void PolyscriptsInit()
+		public static void Init()
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 
@@ -226,58 +228,63 @@ namespace PolyMod
 
 					if (Path.GetFileName(name) == "script.dll")
 					{
-						Assembly assembly = Assembly.Load(entry.ReadBytes());
-						foreach (Type type in assembly.GetTypes())
-						{
-                            type.GetMethod("Load")?.Invoke(null, null);
-                        }
+						PolyscriptLoad(entry.ReadBytes());
 					}
-				}
-			}
-		}
-
-		private static void GameLogicDataModsInit(JObject gameLogicData)
-		{
-			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
-
-			foreach (string modname in Directory.GetFiles(Plugin.MODS_PATH, "*.polymod"))
-			{
-				ZipArchive mod = new(File.OpenRead(modname));
-
-				foreach (var entry in mod.Entries)
-				{
-					string name = entry.ToString();
-
 					if (Path.GetFileName(name) == "patch.json")
 					{
-						try
-						{
-							Plugin.logger.LogInfo(string.Format("Loading patch.json of {0}", modname));
-							Patch(gameLogicData, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
-						}
-						catch (Exception e)
-						{
-							Plugin.logger.LogWarning(e.Message);
-						}
-						Patch(gameLogicData, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
+						patchList.Add(new Tuple<string, JObject>(modname, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd())));
 					}
 					if (Path.GetExtension(name) == ".png")
 					{
-						Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] switch
-						{
-							"field" => new(0.5f, 0.0f),
-							"mountain" => new(0.5f, -0.375f),
-							_ => new(0.5f, 0.5f),
-						};
-						Sprite sprite = BuildSprite(entry.ReadBytes(), pivot);
-						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
-						//GameManager.GetSpriteAtlasManager().spriteToAtlasName.Add(sprite, "Heads");
+						spritesList.Add(new Tuple<string, byte[]>(name, entry.ReadBytes()));
 					}
 				}
 			}
 		}
 
-		private static void Patch(JObject gld, JObject patch)
+		public static void PatchLoad(JObject gameLogicdata)
+		{
+			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
+			foreach (Tuple<string, JObject> patchTuple in patchList){
+				string modname = patchTuple.Item1;
+				JObject patch = patchTuple.Item2;
+				Plugin.logger.LogInfo("Loading patch.json of " + modname + "...");
+				try{
+					GameLogicDataPatch(gameLogicdata, patch);
+					Plugin.logger.LogInfo("Patch.json of " + modname + " loaded successfully!");
+				}
+				catch(Exception exception){
+					Plugin.logger.LogInfo("Error while loading patch.json of " + modname + ": " + exception.Message);
+				}
+			}
+			foreach (Tuple<string, byte[]> spriteTuple in spritesList){
+				string name = spriteTuple.Item1;
+				byte[] spriteData = spriteTuple.Item2;
+				Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] switch
+				{
+					"field" => new(0.5f, 0.0f),
+					"mountain" => new(0.5f, -0.375f),
+					_ => new(0.5f, 0.5f),
+				};
+				Sprite sprite = BuildSprite(spriteData, pivot);
+				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
+			}
+		}
+
+		private static void PolyscriptLoad(byte[] polyscriptData)
+		{
+			try{
+				Assembly assembly = Assembly.Load(polyscriptData);
+				foreach (Type type in assembly.GetTypes())
+				{
+					type.GetMethod("Load")?.Invoke(null, null);
+				}
+			}
+			catch(Exception exception){
+				Plugin.logger.LogInfo(exception.Message);
+			}
+		}
+		private static void GameLogicDataPatch(JObject gld, JObject patch)
 		{
 			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 			{

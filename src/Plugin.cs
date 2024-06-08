@@ -21,7 +21,7 @@ namespace PolyMod
 		{
 			Harmony.CreateAndPatchAll(typeof(Plugin));
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
-			ModLoader.PolyscriptsInit();
+			ModLoader.Init();
 			logger = Log;
 		}
 
