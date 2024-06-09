@@ -226,7 +226,7 @@ namespace PolyMod
 				{
 					string name = entry.ToString();
 
-					if (Path.GetFileName(name) == "script.dll")
+					if (Path.GetExtension(name) == ".dll")
 					{
 						PolyscriptLoad(entry.ReadBytes());
 					}
