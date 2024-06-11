@@ -14,14 +14,15 @@ namespace PolyMod
 	internal static class ModLoader
 	{
 		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
-		public static List<Tuple<string, JObject>> patchList = new List<Tuple<string, JObject>>();
-		public static List<Tuple<string, byte[]>> spritesList = new List<Tuple<string, byte[]>>();
+		private static List<JObject> _patches = new();
+		private static Dictionary<string, byte[]> _sprites = new();
+		private static Dictionary<string, AudioClip> _audios = new();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
 		{
-			PatchLoad(rootObject);
+			Load(rootObject);
 		}
 
 		[HarmonyPostfix]
@@ -232,42 +233,34 @@ namespace PolyMod
 					}
 					if (Path.GetFileName(name) == "patch.json")
 					{
-						patchList.Add(new Tuple<string, JObject>(modname, JObject.Parse(new StreamReader(entry.Open()).ReadToEnd())));
+						_patches.Add(JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
 					}
 					if (Path.GetExtension(name) == ".png")
 					{
-						spritesList.Add(new Tuple<string, byte[]>(name, entry.ReadBytes()));
+						_sprites.Add(name, entry.ReadBytes());
 					}
 				}
 			}
 		}
 
-		public static void PatchLoad(JObject gameLogicdata)
+		public static void Load(JObject gameLogicdata)
 		{
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
-			foreach (Tuple<string, JObject> patchTuple in patchList){
-				string modname = patchTuple.Item1;
-				JObject patch = patchTuple.Item2;
-				Plugin.logger.LogInfo("Loading patch.json of " + modname + "...");
-				try{
+			foreach (var patch in _patches){
+				try
+				{
 					GameLogicDataPatch(gameLogicdata, patch);
-					Plugin.logger.LogInfo("Patch.json of " + modname + " loaded successfully!");
-				}
-				catch(Exception exception){
-					Plugin.logger.LogInfo("Error while loading patch.json of " + modname + ": " + exception.Message);
-				}
+				} catch {}
 			}
-			foreach (Tuple<string, byte[]> spriteTuple in spritesList){
-				string name = spriteTuple.Item1;
-				byte[] spriteData = spriteTuple.Item2;
-				Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] switch
+			foreach (var sprite_ in _sprites){
+				Vector2 pivot = Path.GetFileNameWithoutExtension(sprite_.Key).Split("_")[0] switch
 				{
 					"field" => new(0.5f, 0.0f),
 					"mountain" => new(0.5f, -0.375f),
 					_ => new(0.5f, 0.5f),
 				};
-				Sprite sprite = BuildSprite(spriteData, pivot);
-				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
+				Sprite sprite = BuildSprite(sprite_.Value, pivot);
+				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 			}
 		}
 
