@@ -215,11 +215,17 @@ namespace PolyMod
 		{
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UICityPlot), nameof(UICityPlot.AddHouse))]
+		private static void UICityPlot_AddHouse()
+		{
+		}
+
 		public static void Init()
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
-
-			foreach (string modname in Directory.GetFiles(Plugin.MODS_PATH, "*.polymod"))
+			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
+			foreach (string modname in mods)
 			{
 				ZipArchive mod = new(File.OpenRead(modname));
 
