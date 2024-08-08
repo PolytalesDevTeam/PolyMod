@@ -171,38 +171,6 @@ namespace PolyMod
 			}
 		}
 
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(SpriteAtlasManager), nameof(SpriteAtlasManager.LoadSpriteAtlasTexture))]
-		private static bool SpriteAtlasManager_LoadSpriteAtlasTexture(SpriteAtlasManager __instance, string atlas, Il2CppSystem.Action<Texture2D> completion)
-		{
-			Dictionary<string, Sprite> sprites = new();
-
-			if (atlas != "Heads") return true;
-			if (!__instance.cachedSprites.TryGetValue(atlas, out _))
-			{
-				__instance.cachedSprites[atlas] = new();
-			}
-			foreach (var sprite in __instance.cachedSprites[atlas])
-			{
-				if (sprite.Value.name != string.Empty) break;
-				sprites.Add(sprite.Key, sprite.Value);
-			}
-			Texture2D customAtlas = new(1, 1);
-			Rect[] rects = customAtlas.PackTextures(sprites.Select(i => i.Value.texture).ToArray(), 2);
-			foreach (var sprite in sprites)
-			{
-				Sprite newSprite = Sprite.Create(
-					customAtlas,
-					rects[sprites.Values.ToList().IndexOf(sprite.Value)],
-					new(0.5f, 0.5f)
-				);
-				__instance.cachedSprites[atlas][sprite.Key] = newSprite;
-				//__instance.spriteToAtlasName[newSprite] = atlas;
-			}
-			completion.Invoke(customAtlas);
-			return false;
-		}
-
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
 		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
@@ -265,7 +233,7 @@ namespace PolyMod
 					"mountain" => new(0.5f, -0.375f),
 					_ => new(0.5f, 0.5f),
 				};
-				Sprite sprite = BuildSprite(sprite_.Value, pivot);
+				Sprite sprite = Api.BuildSprite(sprite_.Value, pivot);
 				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 			}
 		}
@@ -288,7 +256,7 @@ namespace PolyMod
 			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 			{
 				JArray token = jtoken.Cast<JArray>();
-				TermData term = LocalizationManager.Sources[0].AddTerm(Plugin.GetJTokenName(token).Replace('_', '.'));
+				TermData term = LocalizationManager.Sources[0].AddTerm(Api.GetJTokenName(token).Replace('_', '.'));
 				List<string> strings = new();
 				for (int i = 0; i < token.Count; i++)
 				{
@@ -310,9 +278,9 @@ namespace PolyMod
 				{
 					++_autoidx;
 					token["idx"] = _autoidx;
-					string id = Plugin.GetJTokenName(token);
+					string id = Api.GetJTokenName(token);
 
-					switch (Plugin.GetJTokenName(token, 2))
+					switch (Api.GetJTokenName(token, 2))
 					{
 						case "tribeData":
 							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
@@ -360,13 +328,6 @@ namespace PolyMod
 			{
 				sprite = new SpriteAddress("Heads", id);
 			}
-		}
-
-		private static Sprite BuildSprite(byte[] data, Vector2 pivot)
-		{
-			Texture2D texture = new(1, 1);
-			texture.LoadImage(data);
-			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
 	}
 }
