@@ -19,10 +19,17 @@ namespace PolyMod
 
 		public override void Load()
 		{
+			logger = Log;
+
+			if (Environment.GetCommandLineArgs().Contains("--server"))
+			{
+				logger.LogWarning("Server is not implemented yet!");
+				Environment.Exit(0);
+			}
+
 			Harmony.CreateAndPatchAll(typeof(Plugin));
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
 			ModLoader.Init();
-			logger = Log;
 		}
 	}
 }
