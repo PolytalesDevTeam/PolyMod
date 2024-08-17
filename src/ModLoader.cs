@@ -189,6 +189,12 @@ namespace PolyMod
 		{
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.LateUpdate))]
+		private static void MapRenderer_LateUpdate()
+		{
+		}
+
 		public static void Init()
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
