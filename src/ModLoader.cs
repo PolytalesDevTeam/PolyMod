@@ -172,6 +172,18 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
+		[HarmonyPatch(typeof(City), nameof(City.UpdateObject))]
+		private static void City_UpdateObject(City __instance)
+		{
+			Console.Write((int)__instance.Owner.tribe);
+			if (__instance.Owner != null && (int)__instance.Owner.tribe > 17){
+				__instance.cityRenderer.Tribe = TribeData.Type.Imperius;
+				__instance.cityRenderer.SkinType = SkinType.Default;
+				__instance.cityRenderer.RefreshCity();
+			}
+		}
+
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
 		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
 		{
