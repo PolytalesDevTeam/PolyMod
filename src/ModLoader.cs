@@ -8,6 +8,7 @@ using Polytopia.Data;
 using System.IO.Compression;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.InputSystem.Interactions;
 
 namespace PolyMod
 {
@@ -15,8 +16,10 @@ namespace PolyMod
 	{
 		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static List<JObject> _patches = new();
-		private static Dictionary<string, byte[]> _sprites = new();
+		private static Dictionary<string, byte[]> _textures = new();
+		private static Dictionary<string, Sprite> _sprites = new();
 		private static Dictionary<string, AudioClip> _audios = new();
+		public static Dictionary<string, int> gldDictionary = new ();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -207,6 +210,40 @@ namespace PolyMod
 		{
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(Unit), nameof(Unit.SetVisible))]
+		private static void Unit_SetVisible(Unit __instance, bool isVisible)
+		{
+			//Console.Write("Parent: " + __instance.transform.parent + ", of unit with type: " + __instance.UnitData.type);
+			Transform unitTransform = new Transform();
+			foreach (Transform unit in __instance.transform.parent)
+			{
+				unitTransform = unit.gameObject.transform;
+			}
+			Transform spriteContainerTransform = unitTransform.Find("SpriteContainer");
+			if (spriteContainerTransform != null)
+			{
+				GameObject spriteContainer = spriteContainerTransform.gameObject;
+				Transform headTransform = spriteContainer.transform.Find("Head");
+				Transform bodyTransform = spriteContainer.transform.Find("Body");
+				if(headTransform != null){
+					SpriteRenderer sr = headTransform.gameObject.GetComponent<SpriteRenderer>();
+					if(sr != null){
+						foreach (var kvp in _sprites) {
+							if (kvp.Value) Console.WriteLine(kvp.Key);
+						}
+						if(sr.sprite.name == "head" || sr.sprite.name == ""){
+							string idKey = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.tribe).Key;
+							string spritesKey = "head_" + idKey + "_";
+							Console.Write("Found custom tribe's head, changing sprite to: " + spritesKey + ".png");
+							sr.sprite = _sprites[spritesKey];
+						}
+					}
+				}
+				if(bodyTransform != null){}
+			}
+		}
+
 		public static void Init()
 		{
 			Directory.CreateDirectory(Plugin.MODS_PATH);
@@ -229,7 +266,7 @@ namespace PolyMod
 					}
 					if (Path.GetExtension(name) == ".png")
 					{
-						_sprites.Add(name, entry.ReadBytes());
+						_textures.Add(name, entry.ReadBytes());
 					}
 				}
 			}
@@ -244,7 +281,7 @@ namespace PolyMod
 					GameLogicDataPatch(gameLogicdata, patch);
 				} catch {}
 			}
-			foreach (var sprite_ in _sprites){
+			foreach (var sprite_ in _textures){
 				Vector2 pivot = Path.GetFileNameWithoutExtension(sprite_.Key).Split("_")[0] switch
 				{
 					"field" => new(0.5f, 0.0f),
@@ -253,6 +290,7 @@ namespace PolyMod
 				};
 				Sprite sprite = Api.BuildSprite(sprite_.Value, pivot);
 				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
+				_sprites.Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 			}
 		}
 
@@ -297,7 +335,7 @@ namespace PolyMod
 					++_autoidx;
 					token["idx"] = _autoidx;
 					string id = Api.GetJTokenName(token);
-
+					gldDictionary[id] = _autoidx;
 					switch (Api.GetJTokenName(token, 2))
 					{
 						case "tribeData":
