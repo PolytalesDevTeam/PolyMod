@@ -19,6 +19,7 @@ namespace PolyMod
 		private static Dictionary<string, byte[]> _textures = new();
 		private static Dictionary<string, Sprite> _sprites = new();
 		private static Dictionary<string, AudioClip> _audios = new();
+		private static Dictionary<int, string> _styles = new();
 		public static Dictionary<string, int> gldDictionary = new ();
 
 		[HarmonyPrefix]
@@ -227,21 +228,80 @@ namespace PolyMod
 				Transform headTransform = spriteContainer.transform.Find("Head");
 				Transform bodyTransform = spriteContainer.transform.Find("Body");
 				if(headTransform != null){
-					SpriteRenderer sr = headTransform.gameObject.GetComponent<SpriteRenderer>();
-					if(sr != null){
-						foreach (var kvp in _sprites) {
-							if (kvp.Value) Console.WriteLine(kvp.Key);
-						}
-						if(sr.sprite.name == "head" || sr.sprite.name == ""){
-							string idKey = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.tribe).Key;
-							string spritesKey = "head_" + idKey + "_";
-							Console.Write("Found custom tribe's head, changing sprite to: " + spritesKey + ".png");
-							sr.sprite = _sprites[spritesKey];
-						}
-					}
+					SpriteRenderer headRenderer = headTransform.gameObject.GetComponent<SpriteRenderer>();
+					SetCustomSpriteToSpriteRenderer(headRenderer, "head", (int)__instance.Owner.tribe);
 				}
 				if(bodyTransform != null){}
 			}
+		}
+		private static void SetCustomSpriteToSpriteRenderer(SpriteRenderer spriteRenderer, string targetSpriteId, int styleAndClimate){
+			if(spriteRenderer != null){
+				if(spriteRenderer.sprite.name == targetSpriteId || spriteRenderer.sprite.name == "" || styleAndClimate > 16){
+					string idKey = gldDictionary.FirstOrDefault(x => x.Value == styleAndClimate).Key;
+					string spritesKey = targetSpriteId + "_" + idKey + "_";
+					spriteRenderer.sprite = _sprites[spritesKey];
+				}
+			}
+		}
+		private static void SetCustomSpriteToPolytopiaSpriteRenderer(PolytopiaSpriteRenderer spriteRenderer, string targetSpriteId, int styleAndClimate){
+			if(spriteRenderer != null){
+				if(spriteRenderer.sprite.name == targetSpriteId || spriteRenderer.sprite.name == "" || styleAndClimate > 16){
+					string idKey = gldDictionary.FirstOrDefault(x => x.Value == styleAndClimate).Key;
+					string spritesKey = targetSpriteId + "_" + idKey + "_";
+					spriteRenderer.sprite = _sprites[spritesKey];
+				}
+			}
+		}
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(Tile), nameof(Tile.BatchSprites))]
+		private static void Tile_BatchSprites(Tile __instance)
+		{
+			Transform terrainContainerTransform =  __instance.transform.Find("Terrain");
+			Console.Write(__instance.Climate);
+			// if (terrainContainerTransform != null)
+			// {
+			// 	string terrain = __instance.Data.terrain.ToString().ToLower();
+			// 	//Console.Write("Terrain found!");
+			// 	//Transform forestTransform = terrainContainerTransform.transform.Find("Forest");
+			// 	//Transform mountainTransform = terrainContainerTransform.transform.Find("Mountain");
+			// 	PolytopiaSpriteRenderer terrainRendererUI = terrainContainerTransform.gameObject.GetComponent<PolytopiaSpriteRenderer>();
+			// 	TerrainRenderer terrainRenderer = terrainContainerTransform.gameObject.GetComponent<TerrainRenderer>();
+			// 	//Console.Write("Renderer found!");
+			// 	//SetCustomSpriteToPolytopiaSpriteRenderer(terrainRenderer, "field", (int)__instance.Owner.tribe);
+			// 	if(terrainRendererUI != null && (terrain == "field" || terrain == "forest" || terrain == "mountain")){
+			// 		if(__instance.Climate > 16){
+			// 			SetCustomSpriteToPolytopiaSpriteRenderer(terrainRendererUI, terrain, __instance.Climate);
+			// 			//string idKey = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.tribe).Key;
+			// 			//string spritesKey = "field" + "_" + idKey + "_";
+			// 			//string spritesKey = "field_minerskagg_";
+			// 			//Console.Write("Found custom tribe's head, changing sprite to: " + spritesKey + ".png");
+			// 			//terrainRendererUI.sprite = _sprites[spritesKey];
+			// 		}
+			// 		if(terrainRenderer != null){
+			// 			if(__instance.Climate > 16){
+			// 				//string idKey = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.tribe).Key;
+			// 				//string spritesKey = "field" + "_" + idKey + "_";
+			// 				//string spritesKey = "field_minerskagg_";
+			// 				SetCustomSpriteToPolytopiaSpriteRenderer(terrainRenderer.spriteRenderer, terrain, __instance.Climate);
+			// 				//Console.Write("Found custom tribe's head, changing sprite to: " + spritesKey + ".png");
+			// 				//terrainRenderer.spriteRenderer.sprite = _sprites[spritesKey];
+			// 			}
+			// 			if(__instance.Climate > 16){
+			// 				//string idKey = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.tribe).Key;
+			// 				//string spritesKey = "field" + "_" + idKey + "_";
+			// 				//string spritesKey = "field_minerskagg_";
+			// 				//Console.Write("Found custom tribe's head, changing sprite to: " + spritesKey + ".png");
+			// 				//terrainRenderer.SpriteRenderer.sprite = _sprites[spritesKey];
+			// 				Console.Write(__instance.Climate);
+			// 				SetCustomSpriteToPolytopiaSpriteRenderer(terrainRenderer.SpriteRenderer, terrain, __instance.Climate);
+			// 			}
+			// 		}
+			// 	}
+			// 	//Console.Write("Sprite found!");
+			// }
+			// else{
+			// 	//Console.Write("Terrain not found!");
+			// }
 		}
 
 		public static void Init()
@@ -309,6 +369,7 @@ namespace PolyMod
 		}
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
 		{
+			//EnumCache<SkinType>.AddMapping("Druid", (SkinType)15);
 			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 			{
 				JArray token = jtoken.Cast<JArray>();
@@ -336,6 +397,16 @@ namespace PolyMod
 					token["idx"] = _autoidx;
 					string id = Api.GetJTokenName(token);
 					gldDictionary[id] = _autoidx;
+					if (token["climate"] != null && !int.TryParse((string)token["climate"], out _))
+					{
+						++_autoidx;
+						_styles.TryAdd(_autoidx, (string)token["climate"]);
+					}
+					if (token["style"] != null && !int.TryParse((string)token["style"], out _))
+					{
+						++_autoidx;
+						_styles.TryAdd(_autoidx, (string)token["style"]);
+					}
 					switch (Api.GetJTokenName(token, 2))
 					{
 						case "tribeData":
