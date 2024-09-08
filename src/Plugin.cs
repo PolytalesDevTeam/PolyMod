@@ -18,6 +18,7 @@ namespace PolyMod
 		public override void Load()
 		{
 			ModLoader.Init();
+			VisualsManager.Init();
 			logger = Log;
 		}
 	}
