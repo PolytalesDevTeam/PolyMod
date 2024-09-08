@@ -8,18 +8,23 @@ using Polytopia.Data;
 using System.IO.Compression;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.InputSystem.Interactions;
 
 namespace PolyMod
 {
 	internal static class ModLoader
 	{
-		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static List<JObject> _patches = new();
 		private static Dictionary<string, byte[]> _textures = new();
 		private static Dictionary<string, Sprite> _sprites = new();
 		private static Dictionary<string, AudioClip> _audios = new();
 		public static Dictionary<string, int> gldDictionary = new ();
+		public static int tribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
+		public static int techCount = (int)Enum.GetValues(typeof(TechData.Type)).Cast<TechData.Type>().Last();
+		public static int unitCount = (int)Enum.GetValues(typeof(UnitData.Type)).Cast<UnitData.Type>().Last();
+		public static int improvementsCount = (int)Enum.GetValues(typeof(ImprovementData.Type)).Cast<ImprovementData.Type>().Last();
+		public static int terrainCount = (int)Enum.GetValues(typeof(Polytopia.Data.TerrainData.Type)).Cast<Polytopia.Data.TerrainData.Type>().Last();
+		public static int resourceCount = (int)Enum.GetValues(typeof(ResourceData.Type)).Cast<ResourceData.Type>().Last();
+		public static int taskCount = (int)Enum.GetValues(typeof(TaskData.Type)).Cast<TaskData.Type>().Last();
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -32,7 +37,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsTribeUnlocked))]
 		private static void PurchaseManager_IsTribeUnlocked(ref bool __result, TribeData.Type type)
 		{
-			__result = (int)type >= Plugin.AUTOIDX_STARTS_FROM || __result;
+			__result = (int)type >= ((int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last() + 1) || __result;
 		}
 
 		[HarmonyPostfix]
@@ -246,6 +251,7 @@ namespace PolyMod
 
 		public static void Init()
 		{
+			Harmony.CreateAndPatchAll(typeof(ModLoader));
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
 			foreach (string modname in mods)
@@ -332,35 +338,54 @@ namespace PolyMod
 
 				if (token["idx"] != null && (int)token["idx"] == -1)
 				{
-					++_autoidx;
-					token["idx"] = _autoidx;
 					string id = Api.GetJTokenName(token);
-					gldDictionary[id] = _autoidx;
-					switch (Api.GetJTokenName(token, 2))
+					string dataType = Api.GetJTokenName(token, 2);
+					switch (dataType)
 					{
 						case "tribeData":
-							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
-							break;
-						case "terrainData":
-							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
-							break;
-						case "resourceData":
-							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
-							PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
-							break;
-						case "taskData":
-							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
-							break;
-						case "improvementData":
-							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
-							PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
-							break;
-						case "unitData":
-							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
-							PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
+							++tribesCount;
+							token["idx"] = tribesCount;
+							gldDictionary[id] = tribesCount;
+							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)tribesCount);
 							break;
 						case "techData":
-							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
+							++techCount;
+							token["idx"] = techCount;
+							gldDictionary[id] = techCount;
+							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)techCount);
+							break;
+						case "unitData":
+							++unitCount;
+							token["idx"] = unitCount;
+							gldDictionary[id] = unitCount;
+							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)unitCount);
+							PrefabManager.units.TryAdd((int)(UnitData.Type)unitCount, PrefabManager.units[(int)UnitData.Type.Scout]);
+							break;
+						case "improvementData":
+							++improvementsCount;
+							token["idx"] = improvementsCount;
+							gldDictionary[id] = improvementsCount;
+							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)improvementsCount);
+							PrefabManager.improvements.TryAdd((ImprovementData.Type)improvementsCount, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+							break;
+						case "terrainData":
+							++terrainCount;
+							token["idx"] = terrainCount;
+							gldDictionary[id] = terrainCount;
+							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)terrainCount);
+							break;
+						case "resourceData":
+							++resourceCount;
+							token["idx"] = resourceCount;
+							gldDictionary[id] = resourceCount;
+							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)resourceCount);
+							PrefabManager.resources.TryAdd((ResourceData.Type)resourceCount, PrefabManager.resources[ResourceData.Type.Game]);
+							break;
+						case "taskData":
+							++taskCount;
+							token["idx"] = taskCount;
+							gldDictionary[id] = taskCount;
+							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)taskCount);
 							break;
 					}
 				}
