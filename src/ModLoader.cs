@@ -25,11 +25,13 @@ namespace PolyMod
 		public static int terrainCount = (int)Enum.GetValues(typeof(Polytopia.Data.TerrainData.Type)).Cast<Polytopia.Data.TerrainData.Type>().Last();
 		public static int resourceCount = (int)Enum.GetValues(typeof(ResourceData.Type)).Cast<ResourceData.Type>().Last();
 		public static int taskCount = (int)Enum.GetValues(typeof(TaskData.Type)).Cast<TaskData.Type>().Last();
+		//public static int skinsCount = Enum.GetValues(typeof(SkinType)).Length;
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
 		{
+			//EnumCache<SkinType>.AddMapping("Druid", (SkinType)1000);
 			Load(rootObject);
 		}
 
@@ -106,83 +108,99 @@ namespace PolyMod
 		}
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
 		{
-			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
+			//Console.Write(skinsCount);
+			try
 			{
-				JArray token = jtoken.Cast<JArray>();
-				TermData term = LocalizationManager.Sources[0].AddTerm(Api.GetJTokenName(token).Replace('_', '.'));
-				List<string> strings = new();
-				for (int i = 0; i < token.Count; i++)
+				foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 				{
-					strings.Add((string)token[i]);
-				}
-				for (int i = 0; i < LocalizationManager.GetAllLanguages().Count - strings.Count; i++)
-				{
-					strings.Add(term.Term);
-				}
-				term.Languages = new Il2CppStringArray(strings.ToArray());
-			}
-			patch.Remove("localizationData");
+					JObject token = jtoken.Cast<JObject>();
+					TermData term = LocalizationManager.Sources[0].AddTerm(Api.GetJTokenName(token).Replace('_', '.'));
 
-			foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
-			{
-				JObject token = jtoken.Cast<JObject>();
+					List<string> strings = new List<string>();
+					Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
 
-				if (token["idx"] != null && (int)token["idx"] == -1)
-				{
-					string id = Api.GetJTokenName(token);
-					string dataType = Api.GetJTokenName(token, 2);
-					switch (dataType)
+					foreach (string language in availableLanguages)
 					{
-						case "tribeData":
-							++tribesCount;
-							token["idx"] = tribesCount;
-							gldDictionary[id] = tribesCount;
-							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)tribesCount);
-							break;
-						case "techData":
-							++techCount;
-							token["idx"] = techCount;
-							gldDictionary[id] = techCount;
-							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)techCount);
-							break;
-						case "unitData":
-							++unitCount;
-							token["idx"] = unitCount;
-							gldDictionary[id] = unitCount;
-							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)unitCount);
-							PrefabManager.units.TryAdd((int)(UnitData.Type)unitCount, PrefabManager.units[(int)UnitData.Type.Scout]);
-							break;
-						case "improvementData":
-							++improvementsCount;
-							token["idx"] = improvementsCount;
-							gldDictionary[id] = improvementsCount;
-							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)improvementsCount);
-							PrefabManager.improvements.TryAdd((ImprovementData.Type)improvementsCount, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
-							break;
-						case "terrainData":
-							++terrainCount;
-							token["idx"] = terrainCount;
-							gldDictionary[id] = terrainCount;
-							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)terrainCount);
-							break;
-						case "resourceData":
-							++resourceCount;
-							token["idx"] = resourceCount;
-							gldDictionary[id] = resourceCount;
-							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)resourceCount);
-							PrefabManager.resources.TryAdd((ResourceData.Type)resourceCount, PrefabManager.resources[ResourceData.Type.Game]);
-							break;
-						case "taskData":
-							++taskCount;
-							token["idx"] = taskCount;
-							gldDictionary[id] = taskCount;
-							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)taskCount);
-							break;
+						if (token.TryGetValue(language, out JToken localizedString))
+						{
+							strings.Add((string)localizedString);
+						}
+						else
+						{
+							strings.Add(term.Term);
+						}
+					}
+					term.Languages = new Il2CppStringArray(strings.ToArray());
+				}
+
+				patch.Remove("localizationData");
+
+				foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
+				{
+					JObject token = jtoken.Cast<JObject>();
+
+					if (token["idx"] != null && (int)token["idx"] == -1)
+					{
+						string id = Api.GetJTokenName(token);
+						string dataType = Api.GetJTokenName(token, 2);
+						Plugin.logger.LogInfo("Loading object of " + dataType + " with id: " + id);
+						switch (dataType)
+						{
+							case "tribeData":
+								++tribesCount;
+								token["idx"] = tribesCount;
+								gldDictionary[id] = tribesCount;
+								EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)tribesCount);
+								break;
+							case "techData":
+								++techCount;
+								token["idx"] = techCount;
+								gldDictionary[id] = techCount;
+								EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)techCount);
+								break;
+							case "unitData":
+								++unitCount;
+								token["idx"] = unitCount;
+								gldDictionary[id] = unitCount;
+								EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)unitCount);
+								PrefabManager.units.TryAdd((int)(UnitData.Type)unitCount, PrefabManager.units[(int)UnitData.Type.Scout]);
+								break;
+							case "improvementData":
+								++improvementsCount;
+								token["idx"] = improvementsCount;
+								gldDictionary[id] = improvementsCount;
+								EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)improvementsCount);
+								PrefabManager.improvements.TryAdd((ImprovementData.Type)improvementsCount, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+								break;
+							case "terrainData":
+								++terrainCount;
+								token["idx"] = terrainCount;
+								gldDictionary[id] = terrainCount;
+								EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)terrainCount);
+								break;
+							case "resourceData":
+								++resourceCount;
+								token["idx"] = resourceCount;
+								gldDictionary[id] = resourceCount;
+								EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)resourceCount);
+								PrefabManager.resources.TryAdd((ResourceData.Type)resourceCount, PrefabManager.resources[ResourceData.Type.Game]);
+								break;
+							case "taskData":
+								++taskCount;
+								token["idx"] = taskCount;
+								gldDictionary[id] = taskCount;
+								EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)taskCount);
+								break;
+						}
 					}
 				}
-			}
 
-			gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
+				gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
+			}
+			catch (Exception ex)
+			{
+				Plugin.logger.LogError(ex.Message);
+			}
 		}
 	}
 }
