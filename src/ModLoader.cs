@@ -25,13 +25,12 @@ namespace PolyMod
 		public static int terrainCount = (int)Enum.GetValues(typeof(Polytopia.Data.TerrainData.Type)).Cast<Polytopia.Data.TerrainData.Type>().Last();
 		public static int resourceCount = (int)Enum.GetValues(typeof(ResourceData.Type)).Cast<ResourceData.Type>().Last();
 		public static int taskCount = (int)Enum.GetValues(typeof(TaskData.Type)).Cast<TaskData.Type>().Last();
-		//public static int skinsCount = Enum.GetValues(typeof(SkinType)).Length;
+		public static int skinsCount = Enum.GetValues(typeof(SkinType)).Length + 1;
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
 		private static void GameLogicData_Parse(JObject rootObject)
 		{
-			//EnumCache<SkinType>.AddMapping("Druid", (SkinType)1000);
 			Load(rootObject);
 		}
 
@@ -134,6 +133,39 @@ namespace PolyMod
 				}
 
 				patch.Remove("localizationData");
+
+				foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
+				{
+					JObject token = jtoken.Cast<JObject>();
+
+					if (token["skins"] != null)
+					{
+						JArray skinsArray = token["skins"].Cast<JArray>();
+						Dictionary<string, int> skinsToReplace = new Dictionary<string, int>();
+
+						foreach (var skin in skinsArray._values)
+						{
+							string skinValue = skin.ToString();
+
+							if (!Enum.TryParse<SkinType>(skinValue, out _))
+							{
+								Plugin.logger.LogInfo($"Creating mapping for non-existent SkinType: {skinValue}");
+								EnumCache<SkinType>.AddMapping(skinValue, (SkinType)skinsCount);
+								skinsToReplace[skinValue] = skinsCount;
+								skinsCount++;
+							}
+						}
+
+						foreach (var entry in skinsToReplace)
+						{
+							if (skinsArray._values.Contains(entry.Key))
+							{
+								skinsArray._values.Remove(entry.Key);
+								skinsArray._values.Add(entry.Value);
+							}
+						}
+					}
+				}
 
 				foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
 				{

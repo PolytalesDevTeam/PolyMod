@@ -72,15 +72,17 @@ namespace PolyMod
 				climate = 1;
 			}
 		}
-				[HarmonyPostfix]
+
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(City), nameof(City.UpdateObject))]
 		private static void City_UpdateObject(City __instance)
 		{
-			Console.Write((int)__instance.Owner.tribe);
-			if (__instance.Owner != null && (int)__instance.Owner.tribe > 17){
-				__instance.cityRenderer.Tribe = TribeData.Type.Imperius;
-				__instance.cityRenderer.SkinType = SkinType.Default;
-				__instance.cityRenderer.RefreshCity();
+			if(__instance.state.name != null){
+				if ((int)__instance.Owner.tribe > 17){
+					__instance.cityRenderer.Tribe = TribeData.Type.Imperius;
+					__instance.cityRenderer.SkinType = SkinType.Default;
+					__instance.cityRenderer.RefreshCity();
+				}
 			}
 		}
 
