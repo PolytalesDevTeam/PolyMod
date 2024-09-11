@@ -5,6 +5,7 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
 using UnityEngine;
@@ -13,11 +14,12 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
+		private static Stopwatch _stopwatch = new();
 		private static List<JObject> _patches = new();
 		private static Dictionary<string, byte[]> _textures = new();
 		public static Dictionary<string, Sprite> sprites = new();
 		private static Dictionary<string, AudioClip> _audios = new();
-		public static Dictionary<string, int> gldDictionary = new ();
+		public static Dictionary<string, int> gldDictionary = new();
 		public static int tribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static int techCount = (int)Enum.GetValues(typeof(TechData.Type)).Cast<TechData.Type>().Last();
 		public static int unitCount = (int)Enum.GetValues(typeof(UnitData.Type)).Cast<UnitData.Type>().Last();
@@ -43,6 +45,7 @@ namespace PolyMod
 
 		public static void Init()
 		{
+			_stopwatch.Start();
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
@@ -56,7 +59,21 @@ namespace PolyMod
 
 					if (Path.GetExtension(name) == ".dll")
 					{
-						PolyscriptLoad(entry.ReadBytes());
+						try
+						{
+							Assembly assembly = Assembly.Load(entry.ReadBytes());
+							foreach (Type type in assembly.GetTypes())
+							{
+								type.GetMethod("Load")?.Invoke(null, null);
+							}
+						}
+						catch (TargetInvocationException exception)
+						{
+							if (exception.InnerException != null)
+							{
+								Plugin.logger.LogError(exception.InnerException.Message);
+							}
+						}
 					}
 					if (Path.GetFileName(name) == "patch.json")
 					{
@@ -68,18 +85,23 @@ namespace PolyMod
 					}
 				}
 			}
+			_stopwatch.Stop();
 		}
 
 		public static void Load(JObject gameLogicdata)
 		{
+			_stopwatch.Start();
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
-			foreach (var patch in _patches){
+			foreach (var patch in _patches)
+			{
 				try
 				{
 					GameLogicDataPatch(gameLogicdata, patch);
-				} catch {}
+				}
+				catch { }
 			}
-			foreach (var sprite_ in _textures){
+			foreach (var sprite_ in _textures)
+			{
 				Vector2 pivot = Path.GetFileNameWithoutExtension(sprite_.Key).Split("_")[0] switch
 				{
 					"field" => new(0.5f, 0.0f),
@@ -90,24 +112,12 @@ namespace PolyMod
 				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 				sprites.Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 			}
+			_stopwatch.Stop();
+			Plugin.logger.LogInfo($"Elapsed time: {_stopwatch.ElapsedMilliseconds}ms");
 		}
 
-		private static void PolyscriptLoad(byte[] polyscriptData)
-		{
-			try{
-				Assembly assembly = Assembly.Load(polyscriptData);
-				foreach (Type type in assembly.GetTypes())
-				{
-					type.GetMethod("Load")?.Invoke(null, null);
-				}
-			}
-			catch(Exception exception){
-				Plugin.logger.LogInfo(exception.Message);
-			}
-		}
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
 		{
-			//Console.Write(skinsCount);
 			try
 			{
 				foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
@@ -229,9 +239,9 @@ namespace PolyMod
 
 				gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
 			}
-			catch (Exception ex)
+			catch (Exception exception)
 			{
-				Plugin.logger.LogError(ex.Message);
+				Plugin.logger.LogError(exception.Message);
 			}
 		}
 	}
