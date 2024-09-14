@@ -21,7 +21,7 @@ namespace PolyMod
 		private static Dictionary<string, AudioClip> _audios = new();
 		public static Dictionary<string, int> gldDictionary = new ();
 		public static int initialTribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
-		public static int tribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
+		public static int tribesCount = initialTribesCount;
 		public static int techCount = (int)Enum.GetValues(typeof(TechData.Type)).Cast<TechData.Type>().Last();
 		public static int unitCount = (int)Enum.GetValues(typeof(UnitData.Type)).Cast<UnitData.Type>().Last();
 		public static int improvementsCount = (int)Enum.GetValues(typeof(ImprovementData.Type)).Cast<ImprovementData.Type>().Last();
