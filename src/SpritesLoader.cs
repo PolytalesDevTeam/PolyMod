@@ -1,13 +1,12 @@
 using HarmonyLib;
 using Polytopia.Data;
 using UnityEngine;
-using static PolyMod.ModLoader;
 
 namespace PolyMod
 {
-    public class VisualsManager
+    public class SpritesLoader
     {
-        [HarmonyPostfix]
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetTileSpriteAddress), new Type[] { typeof(Polytopia.Data.TerrainData.Type), typeof(string) })]
 		private static void SpriteData_GetTileSpriteAddress(ref SpriteAddress __result, Polytopia.Data.TerrainData.Type terrain, string skinId)
 		{
@@ -62,17 +61,29 @@ namespace PolyMod
 		{
 			__result = GetSprite(__result, sprite, "");
 		}
-
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
-		private static void AudioManager_SetAmbienceClimatePrefix(ref int climate)
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
+		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
 		{
-			if (climate > 16)
-			{
-				climate = 1;
-			}
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
+		private static void TechItem_SetupComplete()
+		{
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UICityPlot), nameof(UICityPlot.AddHouse))]
+		private static void UICityPlot_AddHouse()
+		{
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.LateUpdate))]
+		private static void MapRenderer_LateUpdate()
+		{
+		}
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(City), nameof(City.UpdateObject))]
 		private static void City_UpdateObject(City __instance)
@@ -120,7 +131,7 @@ namespace PolyMod
 
 							if(sr != null)
 							{
-								var dictionaryEntry = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.skinType);
+								var dictionaryEntry = ModLoader.gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.skinType);
 								if (!string.IsNullOrEmpty(dictionaryEntry.Key))
 								{
 									string idKey = dictionaryEntry.Key.ToLower();
@@ -129,9 +140,9 @@ namespace PolyMod
 									{
 										string spritesKey = "head_" + idKey + "_";
 
-										if (sprites.ContainsKey(spritesKey))
+										if (ModLoader.sprites.ContainsKey(spritesKey))
 										{
-											sr.sprite = sprites[spritesKey];
+											sr.sprite = ModLoader.sprites[spritesKey];
 										}
 									}
 								}
@@ -170,77 +181,13 @@ namespace PolyMod
 			}
 		}
 
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SelectTribePopup), nameof(SelectTribePopup.SetTribeSkins))]
-		private static void SetTribeSkins(SelectTribePopup __instance)
+        public static Sprite BuildSprite(byte[] data, Vector2 pivot)
 		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SelectTribePopup), nameof(SelectTribePopup.SetDescription))] //TODO REVAMP
-		private static void SetDescription(SelectTribePopup __instance)
-		{
-			__instance.uiTextButton.ButtonEnabled = true;
-			__instance.uiTextButton.gameObject.SetActive(true);
-			if((int)__instance.SkinType > initialSkinsCount){
-				__instance.Description = Localization.Get(__instance.SkinType.GetLocalizationDescriptionKey()) + "\n\n" + Localization.GetSkinned(__instance.SkinType, __instance.tribeData.description2, new Il2CppSystem.Object[]
-				{
-					__instance.tribeName,
-					Localization.Get(__instance.startTechSid, Array.Empty<Il2CppSystem.Object>())
-				});
-			}
-			Console.Write(__instance.Description);
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SkinTypeExtensions), nameof(SkinTypeExtensions.GetSkinNameKey))]
-		public static void GetSkinNameKey(ref string __result)
-		{
-			__result = "TribeSkins/skinName";
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SkinTypeExtensions), nameof(SkinTypeExtensions.GetLocalizationKey))]
-		public static void GetLocalizationKey(ref string __result, SkinType skinType)
-		{
-			if((int)skinType > ModLoader.initialSkinsCount){
-				Console.Write(skinType);
-				__result = "tribeskins." + skinType.GetName<SkinType>();
-			}
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SkinTypeExtensions), nameof(SkinTypeExtensions.GetLocalizationDescriptionKey))]
-		public static void GetLocalizationDescriptionKey(ref string __result, SkinType skinType)
-		{
-			if((int)skinType > ModLoader.initialSkinsCount){
-				Console.Write(skinType);
-				__result = "tribeskins." + skinType.GetName<SkinType>() + ".description";
-			}
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
-		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
-		private static void TechItem_SetupComplete()
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(UICityPlot), nameof(UICityPlot.AddHouse))]
-		private static void UICityPlot_AddHouse()
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.LateUpdate))]
-		private static void MapRenderer_LateUpdate()
-		{
+			Texture2D texture = new(1, 1);
+			texture.filterMode = FilterMode.Trilinear;
+			texture.LoadImage(data);
+			Console.Write(texture.filterMode);
+			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
 
 		private static SpriteAddress GetSprite(SpriteAddress sprite, string name, string style = "", int level = 0)
@@ -262,7 +209,7 @@ namespace PolyMod
 
 		public static void Init()
 		{
-			Harmony.CreateAndPatchAll(typeof(VisualsManager));
+			Harmony.CreateAndPatchAll(typeof(SpritesLoader));
 		}
     }
 }

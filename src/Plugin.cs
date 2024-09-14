@@ -18,7 +18,8 @@ namespace PolyMod
 		public override void Load()
 		{
 			ModLoader.Init();
-			VisualsManager.Init();
+			SpritesLoader.Init();
+			LocalizationLoader.Init();
 			//Setup.Init();
 			logger = Log;
 		}

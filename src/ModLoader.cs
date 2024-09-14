@@ -53,10 +53,14 @@ namespace PolyMod
 			__result = ((int)skinType > initialSkinsCount && (int)skinType != 2000)  || __result;
 		}
 
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
-		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(AudioManager), nameof(AudioManager.SetAmbienceClimate))]
+		private static void AudioManager_SetAmbienceClimatePrefix(ref int climate)
 		{
+			if (climate > 16)
+			{
+				climate = 1;
+			}
 		}
 
 		public static void Init()
@@ -124,7 +128,7 @@ namespace PolyMod
 					"mountain" => new(0.5f, -0.375f),
 					_ => new(0.5f, 0.5f),
 				};
-				Sprite sprite = Api.BuildSprite(sprite_.Value, pivot);
+				Sprite sprite = SpritesLoader.BuildSprite(sprite_.Value, pivot);
 				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 				sprites.Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
 			}
@@ -139,7 +143,7 @@ namespace PolyMod
 				foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 				{
 					JObject token = jtoken.Cast<JObject>();
-					TermData term = LocalizationManager.Sources[0].AddTerm(Api.GetJTokenName(token).Replace('_', '.'));
+					TermData term = LocalizationManager.Sources[0].AddTerm(GetJTokenName(token).Replace('_', '.'));
 
 					List<string> strings = new List<string>();
 					Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
@@ -200,8 +204,8 @@ namespace PolyMod
 
 					if (token["idx"] != null && (int)token["idx"] == -1)
 					{
-						string id = Api.GetJTokenName(token);
-						string dataType = Api.GetJTokenName(token, 2);
+						string id = GetJTokenName(token);
+						string dataType = GetJTokenName(token, 2);
 						Plugin.logger.LogInfo("Loading object of " + dataType + " with id: " + id);
 						switch (dataType)
 						{
@@ -260,6 +264,11 @@ namespace PolyMod
 			{
 				Plugin.logger.LogError(exception.Message);
 			}
+		}
+
+		public static string GetJTokenName(JToken token, int n = 1)
+		{
+			return token.Path.Split('.')[^n];
 		}
 	}
 }
