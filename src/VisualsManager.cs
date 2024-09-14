@@ -88,35 +88,134 @@ namespace PolyMod
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(Unit), nameof(Unit.SetVisible))]
-		private static void Unit_SetVisible(Unit __instance, bool isVisible)
+		private static void UpdateObject(Unit __instance)
 		{
-			//Console.Write("Parent: " + __instance.transform.parent + ", of unit with type: " + __instance.UnitData.type);
-			Transform unitTransform = new Transform();
-			foreach (Transform unit in __instance.transform.parent)
+			try
 			{
-				unitTransform = unit.gameObject.transform;
-			}
-			Transform spriteContainerTransform = unitTransform.Find("SpriteContainer");
-			if (spriteContainerTransform != null)
-			{
-				GameObject spriteContainer = spriteContainerTransform.gameObject;
-				Transform headTransform = spriteContainer.transform.Find("Head");
-				Transform bodyTransform = spriteContainer.transform.Find("Body");
-				if(headTransform != null){
-					SpriteRenderer sr = headTransform.gameObject.GetComponent<SpriteRenderer>();
-					if(sr != null){
-						foreach (var kvp in sprites) {
-							if (kvp.Value) Console.WriteLine(kvp.Key);
+				Transform unitTransform = new Transform();
+				if(__instance.transform.parent.childCount > 0)
+				{
+					foreach (var unit in __instance.transform.parent)
+					{
+						Type type = typeof(Transform);
+						if(unit.GetType() == type)
+						{
+							unitTransform = (Transform)unit;
+							unitTransform = unitTransform.gameObject.transform;
 						}
-						if(sr.sprite.name == "head" || sr.sprite.name == ""){
-							string idKey = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.tribe).Key;
-							string spritesKey = "head_" + idKey + "_";
-							Console.Write("Found custom tribe's head, changing sprite to: " + spritesKey + ".png");
-							sr.sprite = sprites[spritesKey];
+						else
+						{
+							return;
+						}
+					}
+					Transform spriteContainerTransform = unitTransform.Find("SpriteContainer");
+					if (spriteContainerTransform != null)
+					{
+						GameObject spriteContainer = spriteContainerTransform.gameObject;
+						Transform headTransform = spriteContainer.transform.Find("Head");
+
+						if(headTransform != null)
+						{
+							SpriteRenderer sr = headTransform.gameObject.GetComponent<SpriteRenderer>();
+
+							if(sr != null)
+							{
+								var dictionaryEntry = gldDictionary.FirstOrDefault(x => x.Value == (int)__instance.Owner.skinType);
+								if (!string.IsNullOrEmpty(dictionaryEntry.Key))
+								{
+									string idKey = dictionaryEntry.Key.ToLower();
+
+									if (!string.IsNullOrEmpty(idKey))
+									{
+										string spritesKey = "head_" + idKey + "_";
+
+										if (sprites.ContainsKey(spritesKey))
+										{
+											sr.sprite = sprites[spritesKey];
+										}
+									}
+								}
+							}
+							else
+							{
+								return;
+							}
 						}
 					}
 				}
-				if(bodyTransform != null){}
+			}
+			catch(Exception ex)
+			{
+				Console.Write(ex.Message);
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIWorldPreview), nameof(UIWorldPreview.SetPreview), new Type[] {})]
+		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) //bad idea to do it here, i will find better place later.
+		{
+			//base.Show(origin);
+			foreach(var image in GameObject.FindObjectsOfType<UnityEngine.UI.Image>())
+			{
+				if(image.name == "Head")
+				{
+					image.Cast<UnityEngine.UI.Image>();
+					Console.Write(image.sprite.name);
+					//string idKey = "druid_worldpreview";
+					//string spritesKey = "head_" + idKey + "_";
+					//image.sprite = sprites[spritesKey];
+					//image.m_Sprite = sprites[spritesKey];
+					//image.overrideSprite = sprites[spritesKey];
+				}
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SelectTribePopup), nameof(SelectTribePopup.SetTribeSkins))]
+		private static void SetTribeSkins(SelectTribePopup __instance)
+		{
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SelectTribePopup), nameof(SelectTribePopup.SetDescription))] //TODO REVAMP
+		private static void SetDescription(SelectTribePopup __instance)
+		{
+			__instance.uiTextButton.ButtonEnabled = true;
+			__instance.uiTextButton.gameObject.SetActive(true);
+			if((int)__instance.SkinType > initialSkinsCount){
+				__instance.Description = Localization.Get(__instance.SkinType.GetLocalizationDescriptionKey()) + "\n\n" + Localization.GetSkinned(__instance.SkinType, __instance.tribeData.description2, new Il2CppSystem.Object[]
+				{
+					__instance.tribeName,
+					Localization.Get(__instance.startTechSid, Array.Empty<Il2CppSystem.Object>())
+				});
+			}
+			Console.Write(__instance.Description);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SkinTypeExtensions), nameof(SkinTypeExtensions.GetSkinNameKey))]
+		public static void GetSkinNameKey(ref string __result)
+		{
+			__result = "TribeSkins/skinName";
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SkinTypeExtensions), nameof(SkinTypeExtensions.GetLocalizationKey))]
+		public static void GetLocalizationKey(ref string __result, SkinType skinType)
+		{
+			if((int)skinType > ModLoader.initialSkinsCount){
+				Console.Write(skinType);
+				__result = "tribeskins." + skinType.GetName<SkinType>();
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SkinTypeExtensions), nameof(SkinTypeExtensions.GetLocalizationDescriptionKey))]
+		public static void GetLocalizationDescriptionKey(ref string __result, SkinType skinType)
+		{
+			if((int)skinType > ModLoader.initialSkinsCount){
+				Console.Write(skinType);
+				__result = "tribeskins." + skinType.GetName<SkinType>() + ".description";
 			}
 		}
 

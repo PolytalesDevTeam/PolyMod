@@ -3,8 +3,11 @@ using HarmonyLib;
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
+
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
+using PolytopiaBackendBase;
+using PolytopiaBackendBase.Game;
 using System.IO.Compression;
 using System.Reflection;
 using UnityEngine;
@@ -18,14 +21,17 @@ namespace PolyMod
 		public static Dictionary<string, Sprite> sprites = new();
 		private static Dictionary<string, AudioClip> _audios = new();
 		public static Dictionary<string, int> gldDictionary = new ();
-		public static int tribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
+		public static int initialTribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
+		public static int tribesCount = initialTribesCount;
 		public static int techCount = (int)Enum.GetValues(typeof(TechData.Type)).Cast<TechData.Type>().Last();
 		public static int unitCount = (int)Enum.GetValues(typeof(UnitData.Type)).Cast<UnitData.Type>().Last();
 		public static int improvementsCount = (int)Enum.GetValues(typeof(ImprovementData.Type)).Cast<ImprovementData.Type>().Last();
 		public static int terrainCount = (int)Enum.GetValues(typeof(Polytopia.Data.TerrainData.Type)).Cast<Polytopia.Data.TerrainData.Type>().Last();
 		public static int resourceCount = (int)Enum.GetValues(typeof(ResourceData.Type)).Cast<ResourceData.Type>().Last();
 		public static int taskCount = (int)Enum.GetValues(typeof(TaskData.Type)).Cast<TaskData.Type>().Last();
-		public static int skinsCount = Enum.GetValues(typeof(SkinType)).Length + 1;
+		public static int initialSkinsCount = Enum.GetValues(typeof(SkinType)).Length;
+		public static int skinsCount = initialSkinsCount + 1;
+
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameLogicData), nameof(GameLogicData.AddGameLogicPlaceholders))]
@@ -38,7 +44,20 @@ namespace PolyMod
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsTribeUnlocked))]
 		private static void PurchaseManager_IsTribeUnlocked(ref bool __result, TribeData.Type type)
 		{
-			__result = (int)type >= ((int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last() + 1) || __result;
+			__result = (int)type >= (initialTribesCount + 1) || __result;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsSkinUnlocked))]
+		private static void PurchaseManager_IsSkinUnlocked(ref bool __result, SkinType skinType)
+		{
+			__result = ((int)skinType > initialSkinsCount && (int)skinType != 2000)  || __result;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
+		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
+		{
 		}
 
 		public static void Init()
@@ -152,6 +171,7 @@ namespace PolyMod
 								Plugin.logger.LogInfo($"Creating mapping for non-existent SkinType: {skinValue}");
 								EnumCache<SkinType>.AddMapping(skinValue, (SkinType)skinsCount);
 								skinsToReplace[skinValue] = skinsCount;
+								gldDictionary[skinValue] = skinsCount;
 								skinsCount++;
 							}
 						}

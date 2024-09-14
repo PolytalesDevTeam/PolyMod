@@ -19,6 +19,7 @@ namespace PolyMod
 		{
 			ModLoader.Init();
 			VisualsManager.Init();
+			//Setup.Init();
 			logger = Log;
 		}
 	}
