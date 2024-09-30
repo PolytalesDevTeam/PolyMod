@@ -97,6 +97,7 @@ namespace PolyMod
 					}
 					if (Path.GetFileName(name) == "patch.json")
 					{
+						Plugin.logger.LogInfo($"Registried patch from {modname}");
 						_patches.Add(JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
 					}
 					if (Path.GetExtension(name) == ".png")
