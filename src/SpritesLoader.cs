@@ -100,10 +100,7 @@ namespace PolyMod
 					}
 				}
 			}
-			catch(Exception ex)
-			{
-				Console.Write(ex.Message);
-			}
+			catch {}
 		}
 
 		[HarmonyPostfix]
@@ -116,7 +113,6 @@ namespace PolyMod
 				if(image.name == "Head")
 				{
 					image.Cast<UnityEngine.UI.Image>();
-					Console.Write(image.sprite.name);
 					//string idKey = "druid_worldpreview";
 					//string spritesKey = "head_" + idKey + "_";
 					//image.sprite = sprites[spritesKey];
@@ -131,7 +127,6 @@ namespace PolyMod
 			Texture2D texture = new(1, 1);
 			texture.filterMode = FilterMode.Trilinear;
 			texture.LoadImage(data);
-			Console.Write(texture.filterMode);
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
 

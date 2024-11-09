@@ -24,7 +24,6 @@ namespace PolyMod
 					Localization.Get(__instance.startTechSid, Array.Empty<Il2CppSystem.Object>())
 				});
 			}
-			Console.Write(__instance.Description);
 		}
 
 		[HarmonyPostfix]
@@ -39,7 +38,6 @@ namespace PolyMod
 		public static void GetLocalizationKey(ref string __result, SkinType skinType)
 		{
 			if((int)skinType > ModLoader.initialSkinsCount){
-				Console.Write(skinType);
 				__result = "tribeskins." + skinType.GetName<SkinType>();
 			}
 		}
@@ -49,7 +47,6 @@ namespace PolyMod
 		public static void GetLocalizationDescriptionKey(ref string __result, SkinType skinType)
 		{
 			if((int)skinType > ModLoader.initialSkinsCount){
-				Console.Write(skinType);
 				__result = "tribeskins." + skinType.GetName<SkinType>() + ".description";
 			}
 		}
