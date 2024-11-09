@@ -19,9 +19,8 @@ namespace PolyMod
 		{
 			ModLoader.Init();
 			SpritesLoader.Init();
-			LocalizationLoader.Init();
-			//Setup.Init();
 			logger = Log;
+			logger.LogInfo("PolyMod has been successfully loaded.");
 		}
 	}
 }

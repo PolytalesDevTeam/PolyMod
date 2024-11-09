@@ -7,61 +7,6 @@ namespace PolyMod
     public class SpritesLoader
     {
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetTileSpriteAddress), new Type[] { typeof(Polytopia.Data.TerrainData.Type), typeof(string) })]
-		private static void SpriteData_GetTileSpriteAddress(ref SpriteAddress __result, Polytopia.Data.TerrainData.Type terrain, string skinId)
-		{
-			__result = GetSprite(__result, EnumCache<Polytopia.Data.TerrainData.Type>.GetName(terrain), skinId);
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetResourceSpriteAddress), new Type[] { typeof(ResourceData.Type), typeof(string) })]
-		private static void SpriteData_GetResourceSpriteAddress(ref SpriteAddress __result, ResourceData.Type type, string skinOrTribeAsString)
-		{
-			__result = GetSprite(__result, EnumCache<ResourceData.Type>.GetName(type), skinOrTribeAsString);
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetBuildingSpriteAddress), new Type[] { typeof(ImprovementData.Type), typeof(string) })]
-		private static void SpriteData_GetBuildingSpriteAddress(ref SpriteAddress __result, ImprovementData.Type type, string climateOrSkinAsString)
-		{
-			__result = GetSprite(__result, EnumCache<ImprovementData.Type>.GetName(type), climateOrSkinAsString);
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetUnitIconAddress))]
-		private static void SpriteData_GetUnitIconAddress(ref SpriteAddress __result, UnitData.Type type)
-		{
-			__result = GetSprite(__result, "icon", EnumCache<UnitData.Type>.GetName(type));
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(SkinType) })]
-		private static void SpriteData_GetHeadSpriteAddress(ref SpriteAddress __result, SkinType skin)
-		{
-			__result = GetSprite(__result, "head", EnumCache<SkinType>.GetName(skin));
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(TribeData.Type) })]
-		private static void SpriteData_GetHeadSpriteAddress(ref SpriteAddress __result, TribeData.Type type)
-		{
-			__result = GetSprite(__result, "head", EnumCache<TribeData.Type>.GetName(type));
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetHeadSpriteAddress), new Type[] { typeof(SpriteData.SpecialFaceIcon) })]
-		private static void SpriteData_GetHeadSpriteAddress(ref SpriteAddress __result, SpriteData.SpecialFaceIcon specialId)
-		{
-			__result = GetSprite(__result, "head", specialId.ToString());
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(SpriteData), nameof(SpriteData.GetAvatarPartSpriteAddress))]
-		private static void SpriteData_GetAvatarPartSpriteAddress(ref SpriteAddress __result, string sprite)
-		{
-			__result = GetSprite(__result, sprite, "");
-		}
-		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
 		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
 		{
