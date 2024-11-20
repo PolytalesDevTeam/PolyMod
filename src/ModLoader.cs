@@ -76,7 +76,6 @@ namespace PolyMod
 				foreach (var entry in mod.Entries)
 				{
 					string name = entry.ToString();
-
 					if (Path.GetExtension(name) == ".dll")
 					{
 						try
@@ -97,7 +96,7 @@ namespace PolyMod
 					}
 					if (Path.GetFileName(name) == "patch.json")
 					{
-						Plugin.logger.LogInfo($"Registried patch from {modname}");
+						//Plugin.logger.LogInfo($"Registried patch from {modname}"); TODO: fix
 						_patches.Add(JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
 					}
 					if (Path.GetExtension(name) == ".png")
@@ -119,7 +118,9 @@ namespace PolyMod
 				{
 					GameLogicDataPatch(gameLogicdata, patch);
 				}
-				catch { }
+				catch(Exception ex) {
+					Plugin.logger.LogInfo($"Patch error: {ex.Message}");
+				}
 			}
 			foreach (var sprite_ in _textures)
 			{
