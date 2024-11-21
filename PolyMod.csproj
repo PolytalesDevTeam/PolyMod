@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.691" />
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.725" />
 	  <Reference Include="lib\*.dll" />
   </ItemGroup>
 </Project>
