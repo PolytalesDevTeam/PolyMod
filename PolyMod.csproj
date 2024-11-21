@@ -18,6 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="data\intro.mp4" />
+    <EmbeddedResource Include="resources\*.*" />
   </ItemGroup>
 </Project>

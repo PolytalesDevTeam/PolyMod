@@ -11,11 +11,7 @@ namespace PolyMod
 		private static bool SplashController_LoadAndPlayClip(SplashController __instance)
 		{
             string path = Application.persistentDataPath + "/intro.mp4";
-#pragma warning disable CS8604
-            File.WriteAllBytes(path, Assembly.GetExecutingAssembly().GetManifestResourceStream(
-                "PolyMod.data.intro.mp4"
-            ).ReadBytes());
-#pragma warning restore CS8604
+            File.WriteAllBytesAsync(path, Plugin.GetResource("intro.mp4").ReadBytes());
             __instance.lastPlayTime = Time.realtimeSinceStartup;
 			__instance.videoPlayer.url = path;
             __instance.videoPlayer.Play();

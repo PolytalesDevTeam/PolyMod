@@ -1,4 +1,5 @@
-﻿using BepInEx;
+﻿using System.Reflection;
+using BepInEx;
 using BepInEx.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -23,5 +24,13 @@ namespace PolyMod
 			logger = Log;
 			logger.LogInfo("PolyMod has been successfully loaded.");
 		}
+
+		internal static Stream GetResource(string id) {
+#pragma warning disable CS8603
+            return Assembly.GetExecutingAssembly().GetManifestResourceStream(
+				$"{typeof(Plugin).Namespace}.resources.{id}"
+			);
+#pragma warning restore CS8603
+        }
 	}
 }
