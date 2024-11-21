@@ -30,6 +30,7 @@ namespace PolyMod
 		public static int taskCount = (int)Enum.GetValues(typeof(TaskData.Type)).Cast<TaskData.Type>().Last();
 		public static int initialSkinsCount = Enum.GetValues(typeof(SkinType)).Length;
 		public static int skinsCount = initialSkinsCount + 1;
+		public static bool shouldInitializeSprites = true;
 
 
 		[HarmonyPrefix]
@@ -122,17 +123,20 @@ namespace PolyMod
 					Plugin.logger.LogInfo($"Patch error: {ex.Message}");
 				}
 			}
-			foreach (var sprite_ in _textures)
-			{
-				Vector2 pivot = Path.GetFileNameWithoutExtension(sprite_.Key).Split("_")[0] switch
+			if(shouldInitializeSprites){
+				foreach (var sprite_ in _textures)
 				{
-					"field" => new(0.5f, 0.0f),
-					"mountain" => new(0.5f, -0.375f),
-					_ => new(0.5f, 0.5f),
-				};
-				Sprite sprite = SpritesLoader.BuildSprite(sprite_.Value, pivot);
-				GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
-				sprites.Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
+					Vector2 pivot = Path.GetFileNameWithoutExtension(sprite_.Key).Split("_")[0] switch
+					{
+						"field" => new(0.5f, 0.0f),
+						"mountain" => new(0.5f, -0.375f),
+						_ => new(0.5f, 0.5f),
+					};
+					Sprite sprite = SpritesLoader.BuildSprite(sprite_.Value, pivot);
+					GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
+					sprites.Add(Path.GetFileNameWithoutExtension(sprite_.Key), sprite);
+				}
+				shouldInitializeSprites = false;
 			}
 			_stopwatch.Stop();
 			Plugin.logger.LogInfo($"Elapsed time: {_stopwatch.ElapsedMilliseconds}ms");
