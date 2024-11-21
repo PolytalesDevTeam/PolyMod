@@ -18,6 +18,7 @@ namespace PolyMod
 		public override void Load()
 		{
 			ModLoader.Init();
+			Splash.Init();
 			SpritesLoader.Init();
 			logger = Log;
 			logger.LogInfo("PolyMod has been successfully loaded.");
