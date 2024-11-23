@@ -3,6 +3,7 @@ using HarmonyLib;
 using I2.Loc;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
+using LibCpp2IL;
 using Newtonsoft.Json.Linq;
 using Polytopia.Data;
 using System.Diagnostics;
@@ -270,6 +271,16 @@ namespace PolyMod
 			{
 				Plugin.logger.LogError(exception.Message);
 			}
+		}
+
+		internal static Sprite? GetSprite(string name, string style = "", int level = 0)
+		{
+			Sprite? sprite = null;
+			sprite = sprites.GetOrDefault($"{name}__", sprite);
+			sprite = sprites.GetOrDefault($"{name}_{style}_", sprite);
+			sprite = sprites.GetOrDefault($"{name}__{level}", sprite);
+			sprite = sprites.GetOrDefault($"{name}_{style}_{level}", sprite);
+			return sprite;
 		}
 
 		public static string GetJTokenName(JToken token, int n = 1)
