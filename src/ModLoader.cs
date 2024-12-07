@@ -72,6 +72,45 @@ namespace PolyMod
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
+			string[] dynamic = Directory.GetFiles(Path.Combine(Plugin.MODS_PATH, "Dynamic"));
+			foreach (var dynamicname in dynamic)
+			{
+				var entry = File.OpenRead(dynamicname);
+				string name = dynamicname.ToString();
+				Console.Write(name);
+				if (Path.GetExtension(name) == ".dll")
+				{
+					try
+					{
+						Assembly assembly = Assembly.Load(entry.ReadBytes());
+						foreach (Type type in assembly.GetTypes())
+						{
+							type.GetMethod("Load")?.Invoke(null, null);
+						}
+					}
+					catch (TargetInvocationException exception)
+					{
+						if (exception.InnerException != null)
+						{
+							Plugin.logger.LogError(exception.InnerException.Message);
+						}
+					}
+				}
+				if (Path.GetFileName(name) == "patch.json")
+				{
+					//Plugin.logger.LogInfo($"Registried patch from {name}"); TODO: fix
+					using (StreamReader reader = new StreamReader(entry))
+					{
+						string jsonString = reader.ReadToEnd();
+
+						_patches.Add(JObject.Parse(jsonString.ToString()));
+					}
+				}
+				if (Path.GetExtension(name) == ".png")
+				{
+					_textures.Add(name, entry.ReadBytes());
+				}
+			}
 			foreach (string modname in mods)
 			{
 				ZipArchive mod = new(File.OpenRead(modname));
