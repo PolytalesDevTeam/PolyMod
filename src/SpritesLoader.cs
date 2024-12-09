@@ -86,6 +86,63 @@ namespace PolyMod
 			}
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(InteractionBar), nameof(InteractionBar.AddImprovementButtons))]
+		private static void InteractionBar_AddImprovementButtons(InteractionBar __instance, Tile tile)
+		{
+			PlayerState player = GameManager.LocalPlayer;
+			if (player.AutoPlay)
+			{
+				return;
+			}
+			GameState gameState = GameManager.GameState;
+			Il2CppSystem.Collections.Generic.List<CommandBase> buildableImprovementsCommands = CommandUtils.GetBuildableImprovements(gameState, player, tile.Data, true);
+			for (int key = 0; key < __instance.quickActions.buttons.Count; ++key)
+			{
+				UIRoundButton uiroundButton = __instance.quickActions.buttons[key];
+				BuildCommand buildCommand = buildableImprovementsCommands[key].Cast<BuildCommand>();
+				ImprovementData improvementData2;
+				gameState.GameLogicData.TryGetData(buildCommand.Type, out improvementData2);
+				UnitData.Type type = improvementData2.CreatesUnit();
+				if (type == UnitData.Type.None && uiroundButton.icon.sprite.name == "placeholder")
+				{
+					string spriteKey;
+					try
+					{
+						if(ModLoader.gldDictionaryInversed.ContainsKey((int)improvementData2.type))
+						{
+							spriteKey = (ModLoader.gldDictionaryInversed[(int)improvementData2.type] + "__0").ToLower();
+						}
+						else
+						{
+							spriteKey = (improvementData2.type.ToString() + "__0").ToLower();
+						}
+						uiroundButton.SetSprite(ModLoader.sprites[spriteKey]);
+					}
+					catch{}
+				}
+			}
+			// if (tile.Data.resource != null && tile.Data.improvement == null)
+			// {
+				// using (List<ImprovementData>.Enumerator enumerator2 = __instance.GetSuggestedUnlockableImprovements(tile.Data.resource.type, player).GetEnumerator())
+				// {
+				// 	while (enumerator2.MoveNext())
+				// 	{
+				// 		ImprovementData improvementData = enumerator2.Current;
+				// 		UIRoundButton uiroundButton2 = __instance.CreateRoundBottomBarButton(Localization.GetSkinned(player.skinType, improvementData.displayName, Array.Empty<object>()), false);
+				// 		TribeData.Type tribeTypeFromStyle2 = GameManager.GameState.GameLogicData.GetTribeTypeFromStyle(tile.Climate);
+				// 		uiroundButton2.iconSpriteHandle.Request(SpriteData.GetBuildingSpriteAddresses(improvementData.type, tile.GetVisualSkinTypeForTile(), tribeTypeFromStyle2));
+				// 		uiroundButton2.buttonActive = false;
+				// 		uiroundButton2.OnClicked += (UIButtonBase.ButtonAction)delegate(int index, BaseEventData eventData)
+				// 		{
+				// 			PopupManager.HideCurrentPopup();
+				// 			__instance.OnUnlockableClicked(improvementData, tile, player);
+				// 		};
+				// 	}
+				// }
+			// }
+		}
+
 		public static Sprite BuildSprite(byte[] data, Vector2 pivot)
 		{
 			Texture2D texture = new(1, 1);
