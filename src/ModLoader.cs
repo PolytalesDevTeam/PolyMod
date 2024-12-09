@@ -72,17 +72,31 @@ namespace PolyMod
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
-			string[] dynamic = Directory.GetFiles(Path.Combine(Plugin.MODS_PATH, "Dynamic"));
-			foreach (var dynamicname in dynamic)
+			string[] folders = Directory.GetDirectories(Plugin.MODS_PATH);
+			Dictionary<int, Tuple<string, byte[]>> filesBytes = new Dictionary<int, Tuple<string, byte[]>>();
+			foreach (string modname in mods)
 			{
-				var entry = File.OpenRead(dynamicname);
-				string name = dynamicname.ToString();
-				Console.Write(name);
+				ZipArchive mod = new(File.OpenRead(modname));
+				foreach (var entry in mod.Entries)
+				{
+					filesBytes.Add(filesBytes.Count, new Tuple<string, byte[]> ( entry.ToString(), entry.ReadBytes() ));
+				}
+			}
+			foreach(var folder in folders){
+				foreach(var filePath in Directory.GetFiles(folder)){
+					var entry = File.OpenRead(filePath);
+					filesBytes.Add(filesBytes.Count, new Tuple<string, byte[]> ( filePath.ToString(), entry.ReadBytes() ));
+				}
+			}
+			for (int i = 0; i < filesBytes.Count; i++)
+			{
+				string name = filesBytes[i].Item1;
+				byte[] bytes = filesBytes[i].Item2;
 				if (Path.GetExtension(name) == ".dll")
 				{
 					try
 					{
-						Assembly assembly = Assembly.Load(entry.ReadBytes());
+						Assembly assembly = Assembly.Load(bytes);
 						foreach (Type type in assembly.GetTypes())
 						{
 							type.GetMethod("Load")?.Invoke(null, null);
@@ -98,53 +112,12 @@ namespace PolyMod
 				}
 				if (Path.GetFileName(name) == "patch.json")
 				{
-					//Plugin.logger.LogInfo($"Registried patch from {name}"); TODO: fix
-					using (StreamReader reader = new StreamReader(entry))
-					{
-						string jsonString = reader.ReadToEnd();
-
-						_patches.Add(JObject.Parse(jsonString.ToString()));
-					}
+					//Plugin.logger.LogInfo($"Registried patch from {modname}"); TODO: fix
+					_patches.Add(JObject.Parse(new StreamReader(new MemoryStream(bytes)).ReadToEnd()));
 				}
 				if (Path.GetExtension(name) == ".png")
 				{
-					_textures.Add(name, entry.ReadBytes());
-				}
-			}
-			foreach (string modname in mods)
-			{
-				ZipArchive mod = new(File.OpenRead(modname));
-
-				foreach (var entry in mod.Entries)
-				{
-					string name = entry.ToString();
-					if (Path.GetExtension(name) == ".dll")
-					{
-						try
-						{
-							Assembly assembly = Assembly.Load(entry.ReadBytes());
-							foreach (Type type in assembly.GetTypes())
-							{
-								type.GetMethod("Load")?.Invoke(null, null);
-							}
-						}
-						catch (TargetInvocationException exception)
-						{
-							if (exception.InnerException != null)
-							{
-								Plugin.logger.LogError(exception.InnerException.Message);
-							}
-						}
-					}
-					if (Path.GetFileName(name) == "patch.json")
-					{
-						//Plugin.logger.LogInfo($"Registried patch from {modname}"); TODO: fix
-						_patches.Add(JObject.Parse(new StreamReader(entry.Open()).ReadToEnd()));
-					}
-					if (Path.GetExtension(name) == ".png")
-					{
-						_textures.Add(name, entry.ReadBytes());
-					}
+					_textures.Add(name, bytes);
 				}
 			}
 			_stopwatch.Stop();

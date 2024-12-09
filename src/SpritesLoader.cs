@@ -1,7 +1,9 @@
 using HarmonyLib;
+using I2.Loc;
 using LibCpp2IL;
 using Polytopia.Data;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace PolyMod
 {
@@ -49,8 +51,8 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Unit), nameof(Unit.SetVisible))]
 		private static void Unit_SetVisible(Unit __instance)
 		{
-			__instance.transform.FindChild("SpriteContainer/Head")
-				.GetComponent<SpriteRenderer>().sprite = ModLoader.GetSprite("head", "minerskagg");
+			//__instance.transform.FindChild("SpriteContainer/Head")
+			//	.GetComponent<SpriteRenderer>().sprite = ModLoader.GetSprite("head", "minerskagg");
 		}
 
 		[HarmonyPostfix]
