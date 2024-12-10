@@ -106,18 +106,18 @@ namespace PolyMod
 				UnitData.Type type = improvementData2.CreatesUnit();
 				if (type == UnitData.Type.None && uiroundButton.icon.sprite.name == "placeholder")
 				{
-					string spriteKey;
+					string name;
 					try
 					{
 						if(ModLoader.gldDictionaryInversed.ContainsKey((int)improvementData2.type))
 						{
-							spriteKey = (ModLoader.gldDictionaryInversed[(int)improvementData2.type] + "__0").ToLower();
+							name = ModLoader.gldDictionaryInversed[(int)improvementData2.type].ToLower();
 						}
 						else
 						{
-							spriteKey = (improvementData2.type.ToString() + "__0").ToLower();
+							name = improvementData2.type.ToString().ToLower();
 						}
-						uiroundButton.SetSprite(ModLoader.sprites[spriteKey]);
+						uiroundButton.SetSprite(ModLoader.GetSprite(name, player.tribe.ToString().ToLower()));
 					}
 					catch{}
 				}

@@ -15,6 +15,7 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
+		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static Stopwatch _stopwatch = new();
 		private static List<JObject> _patches = new();
 		private static Dictionary<string, byte[]> _textures = new();
@@ -23,15 +24,7 @@ namespace PolyMod
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static int initialTribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
-		public static int tribesCount = initialTribesCount;
-		public static int techCount = (int)Enum.GetValues(typeof(TechData.Type)).Cast<TechData.Type>().Last();
-		public static int unitCount = (int)Enum.GetValues(typeof(UnitData.Type)).Cast<UnitData.Type>().Last();
-		public static int improvementsCount = (int)Enum.GetValues(typeof(ImprovementData.Type)).Cast<ImprovementData.Type>().Last();
-		public static int terrainCount = (int)Enum.GetValues(typeof(Polytopia.Data.TerrainData.Type)).Cast<Polytopia.Data.TerrainData.Type>().Last();
-		public static int resourceCount = (int)Enum.GetValues(typeof(ResourceData.Type)).Cast<ResourceData.Type>().Last();
-		public static int taskCount = (int)Enum.GetValues(typeof(TaskData.Type)).Cast<TaskData.Type>().Last();
-		public static int initialSkinsCount = Enum.GetValues(typeof(SkinType)).Length;
-		public static int skinsCount = initialSkinsCount + 1;
+		public static int initialSkinsCount = (int)Enum.GetValues(typeof(SkinType)).Cast<SkinType>().Last();
 		public static bool shouldInitializeSprites = true;
 
 
@@ -201,10 +194,10 @@ namespace PolyMod
 							if (!Enum.TryParse<SkinType>(skinValue, out _))
 							{
 								Plugin.logger.LogInfo($"Creating mapping for non-existent SkinType: {skinValue}");
-								EnumCache<SkinType>.AddMapping(skinValue, (SkinType)skinsCount);
-								skinsToReplace[skinValue] = skinsCount;
-								gldDictionary[skinValue] = skinsCount;
-								skinsCount++;
+								EnumCache<SkinType>.AddMapping(skinValue, (SkinType)_autoidx);
+								skinsToReplace[skinValue] = _autoidx;
+								gldDictionary[skinValue] = _autoidx;
+								_autoidx++;
 							}
 						}
 
@@ -227,53 +220,53 @@ namespace PolyMod
 					{
 						string id = GetJTokenName(token);
 						string dataType = GetJTokenName(token, 2);
-						Plugin.logger.LogInfo("Loading object of " + dataType + " with id: " + id);
+						Plugin.logger.LogInfo("Creating mapping for " + dataType + " with id: " + id + "and index: " + (_autoidx + 1));
 						switch (dataType)
 						{
 							case "tribeData":
-								++tribesCount;
-								token["idx"] = tribesCount;
-								gldDictionary[id] = tribesCount;
-								EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)tribesCount);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
 								break;
 							case "techData":
-								++techCount;
-								token["idx"] = techCount;
-								gldDictionary[id] = techCount;
-								EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)techCount);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
 								break;
 							case "unitData":
-								++unitCount;
-								token["idx"] = unitCount;
-								gldDictionary[id] = unitCount;
-								EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)unitCount);
-								PrefabManager.units.TryAdd((int)(UnitData.Type)unitCount, PrefabManager.units[(int)UnitData.Type.Scout]);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
+								PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
 								break;
 							case "improvementData":
-								++improvementsCount;
-								token["idx"] = improvementsCount;
-								gldDictionary[id] = improvementsCount;
-								EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)improvementsCount);
-								PrefabManager.improvements.TryAdd((ImprovementData.Type)improvementsCount, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
+								PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
 								break;
 							case "terrainData":
-								++terrainCount;
-								token["idx"] = terrainCount;
-								gldDictionary[id] = terrainCount;
-								EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)terrainCount);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
 								break;
 							case "resourceData":
-								++resourceCount;
-								token["idx"] = resourceCount;
-								gldDictionary[id] = resourceCount;
-								EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)resourceCount);
-								PrefabManager.resources.TryAdd((ResourceData.Type)resourceCount, PrefabManager.resources[ResourceData.Type.Game]);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
+								PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
 								break;
 							case "taskData":
-								++taskCount;
-								token["idx"] = taskCount;
-								gldDictionary[id] = taskCount;
-								EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)taskCount);
+								++_autoidx;
+								token["idx"] = _autoidx;
+								gldDictionary[id] = _autoidx;
+								EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
 								break;
 						}
 					}

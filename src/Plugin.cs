@@ -8,6 +8,7 @@ namespace PolyMod
 	[BepInPlugin("com.polytalesteam.polymod", "PolyMod", "0.0.0")]
 	public class Plugin : BepInEx.Unity.IL2CPP.BasePlugin
 	{
+		internal const int AUTOIDX_STARTS_FROM = 1000;
 		internal static readonly string BASE_PATH = Path.Combine(BepInEx.Paths.BepInExRootPath, "..");
 		internal static readonly string MODS_PATH = Path.Combine(BASE_PATH, "Mods");
 		internal static readonly JsonMergeSettings GLD_MERGE_SETTINGS = new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge };
@@ -21,6 +22,7 @@ namespace PolyMod
 			ModLoader.Init();
 			Splash.Init();
 			SpritesLoader.Init();
+			//PolyBreaker.Init();
 			logger = Log;
 			logger.LogInfo("PolyMod has been successfully loaded.");
 		}
