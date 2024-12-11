@@ -7,17 +7,16 @@
 	<RestoreAdditionalProjectSources>
 		https://api.nuget.org/v3/index.json;
 		https://nuget.bepinex.dev/v3/index.json;
-		https://nuget.samboy.dev/v3/index.json
+		https://nuget.samboy.dev/v3/index.json;
+    https://nuget.pkg.github.com/PolyTalesDevTeam/index.json;
 	</RestoreAdditionalProjectSources>
 	<Configurations>IL2CPP</Configurations>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.725" />
-	  <Reference Include="lib\*.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="TheBattleOfPolytopia" Version="2.11.0.13185">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
     <EmbeddedResource Include="resources\*.*" />
   </ItemGroup>
 </Project>
