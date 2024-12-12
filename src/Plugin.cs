@@ -20,7 +20,7 @@ namespace PolyMod
 		public override void Load()
 		{
 			ModLoader.Init();
-			Splash.Init();
+			Visual.Init();
 			SpritesLoader.Init();
 			//PolyBreaker.Init();
 			logger = Log;
