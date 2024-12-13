@@ -23,8 +23,6 @@ namespace PolyMod
 		private static Dictionary<string, AudioClip> _audios = new();
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
-		public static int initialTribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
-		public static int initialSkinsCount = (int)Enum.GetValues(typeof(SkinType)).Cast<SkinType>().Last();
 		public static bool shouldInitializeSprites = true;
 
 
@@ -39,14 +37,14 @@ namespace PolyMod
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsTribeUnlocked))]
 		private static void PurchaseManager_IsTribeUnlocked(ref bool __result, TribeData.Type type)
 		{
-			__result = (int)type >= (initialTribesCount + 1) || __result;
+			__result = (int)type >= Plugin.AUTOIDX_STARTS_FROM || __result;
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsSkinUnlocked))]
 		private static void PurchaseManager_IsSkinUnlocked(ref bool __result, SkinType skinType)
 		{
-			__result = ((int)skinType > initialSkinsCount && (int)skinType != 2000)  || __result;
+			__result = ((int)skinType >= Plugin.AUTOIDX_STARTS_FROM && (int)skinType != 2000)  || __result;
 		}
 
 		[HarmonyPrefix]
