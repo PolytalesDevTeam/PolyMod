@@ -1,6 +1,7 @@
 using System.Reflection;
 using Cpp2IL.Core.Extensions;
 using HarmonyLib;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -8,7 +9,7 @@ using UnityEngine.UI;
 namespace PolyMod
 {
     internal static class Visual {
-        public static bool isPolyModScreenOpened= true;
+        private static bool isPolyModScreenOpened = false;
 
         [HarmonyPrefix]
 		[HarmonyPatch(typeof(SplashController), nameof(SplashController.LoadAndPlayClip))]
@@ -71,6 +72,7 @@ namespace PolyMod
             NativeHelpers.OpenURL("https://discord.gg/eWPdhWtfVy", false);
             return false;
         }
+
         internal static void Init() {
             Harmony.CreateAndPatchAll(typeof(Visual));
         }
