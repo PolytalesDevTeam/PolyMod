@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
-using Il2CppInterop.Common;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Injection;
 using Newtonsoft.Json.Linq;
@@ -22,11 +21,11 @@ namespace PolyMod
 
 		public override void Load()
 		{
+			logger = Log;
 			ModLoader.Init();
 			Visual.Init();
 			SpritesLoader.Init();
 			//PolyBreaker.Init();
-			logger = Log;
 			logger.LogInfo("PolyMod has been successfully loaded.");
 		}
 
