@@ -7,7 +7,3 @@
 |      Windows       |      Linux      |       OSX       | Android | IOS |
 | :----------------: | :-------------: | :-------------: | :-----: | :-: |
 | :white_check_mark: | :white_check_mark: | :x: |   :x:   | :x: |
-
-## Installation
-
-Go [here](https://github.com/PolytalesDevTeam/PolyModInstaller/releases/latest) to download the installer
