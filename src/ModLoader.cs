@@ -103,7 +103,7 @@ namespace PolyMod
 				}
 				if (Path.GetFileName(name) == "patch.json")
 				{
-					//Plugin.logger.LogInfo($"Registried patch from {modname}"); TODO: fix
+					Plugin.logger.LogInfo($"Registried patch from {name}"); //TODO: fix
 					_patches.Add(JObject.Parse(new StreamReader(new MemoryStream(bytes)).ReadToEnd()));
 				}
 				if (Path.GetExtension(name) == ".png")
@@ -155,7 +155,9 @@ namespace PolyMod
 				foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 				{
 					JObject token = jtoken.Cast<JObject>();
-					TermData term = LocalizationManager.Sources[0].AddTerm(GetJTokenName(token).Replace('_', '.'));
+					string name = GetJTokenName(token).Replace('_', '.');
+					if (name.StartsWith("tribeskins")) name = "TribeSkins/" + name;
+					TermData term = LocalizationManager.Sources[0].AddTerm(name);
 
 					List<string> strings = new List<string>();
 					Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
