@@ -1,6 +1,9 @@
 ﻿using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
+using Il2CppInterop.Common;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.Injection;
 using Newtonsoft.Json.Linq;
 
 namespace PolyMod
@@ -34,5 +37,12 @@ namespace PolyMod
 			);
 #pragma warning restore CS8603
         }
+
+		internal static Il2CppSystem.Type WrapType<T>() where T : class
+		{
+			if (!ClassInjector.IsTypeRegisteredInIl2Cpp<T>())
+				ClassInjector.RegisterTypeInIl2Cpp<T>();
+			return Il2CppType.From(typeof(T));
+		}
 	}
 }
