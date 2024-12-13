@@ -7,9 +7,10 @@ using Newtonsoft.Json.Linq;
 
 namespace PolyMod
 {
-	[BepInPlugin("com.polytalesteam.polymod", "PolyMod", "0.0.0")]
+	[BepInPlugin("com.polymod", "PolyMod", VERSION)]
 	public class Plugin : BepInEx.Unity.IL2CPP.BasePlugin
 	{
+		internal const string VERSION = "0.0.0";
 		internal const int AUTOIDX_STARTS_FROM = 1000;
 		internal static readonly string BASE_PATH = Path.Combine(BepInEx.Paths.BepInExRootPath, "..");
 		internal static readonly string MODS_PATH = Path.Combine(BASE_PATH, "Mods");
