@@ -51,8 +51,25 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Unit), nameof(Unit.SetVisible))]
 		private static void Unit_SetVisible(Unit __instance)
 		{
-			//__instance.transform.FindChild("SpriteContainer/Head")
-			//	.GetComponent<SpriteRenderer>().sprite = ModLoader.GetSprite("head", "minerskagg");
+			string tribe;
+			try
+			{
+				if(ModLoader.gldDictionaryInversed.ContainsKey((int)__instance.Owner.tribe))
+				{
+					tribe = ModLoader.gldDictionaryInversed[(int)__instance.Owner.tribe];
+				}
+				else
+				{
+					tribe = __instance.Owner.tribe.ToString();
+				}
+				Sprite? sprite = ModLoader.GetSprite("head", tribe);
+				if(sprite != null)
+				{
+					__instance.transform.FindChild("SpriteContainer/Head")
+								.GetComponent<SpriteRenderer>().sprite = sprite;
+				}
+			}
+			catch{}
 		}
 
 		[HarmonyPostfix]
@@ -111,13 +128,13 @@ namespace PolyMod
 					{
 						if(ModLoader.gldDictionaryInversed.ContainsKey((int)improvementData2.type))
 						{
-							name = ModLoader.gldDictionaryInversed[(int)improvementData2.type].ToLower();
+							name = ModLoader.gldDictionaryInversed[(int)improvementData2.type];
 						}
 						else
 						{
-							name = improvementData2.type.ToString().ToLower();
+							name = improvementData2.type.ToString();
 						}
-						uiroundButton.SetSprite(ModLoader.GetSprite(name, player.tribe.ToString().ToLower()));
+						uiroundButton.SetSprite(ModLoader.GetSprite(name, player.tribe.ToString()));
 					}
 					catch{}
 				}

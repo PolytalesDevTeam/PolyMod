@@ -23,6 +23,7 @@ namespace PolyMod
 		private static Dictionary<string, AudioClip> _audios = new();
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
+		public static Dictionary<int, Tuple<string, string>> modsStatuses = new Dictionary<int, Tuple<string, string>>();
 		public static int initialTribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static int initialSkinsCount = (int)Enum.GetValues(typeof(SkinType)).Cast<SkinType>().Last();
 		public static bool shouldInitializeSprites = true;
@@ -67,6 +68,7 @@ namespace PolyMod
 			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
 			string[] folders = Directory.GetDirectories(Plugin.MODS_PATH);
 			Dictionary<int, Tuple<string, byte[]>> filesBytes = new Dictionary<int, Tuple<string, byte[]>>();
+			int modsCount = 0;
 			foreach (string modname in mods)
 			{
 				ZipArchive mod = new(File.OpenRead(modname));
@@ -74,12 +76,16 @@ namespace PolyMod
 				{
 					filesBytes.Add(filesBytes.Count, new Tuple<string, byte[]> ( entry.ToString(), entry.ReadBytes() ));
 				}
+				modsStatuses[modsCount] = new Tuple<string, string> ( modname, "loaded successfully" );
+				modsCount++;
 			}
 			foreach(var folder in folders){
 				foreach(var filePath in Directory.GetFiles(folder)){
 					var entry = File.OpenRead(filePath);
 					filesBytes.Add(filesBytes.Count, new Tuple<string, byte[]> ( filePath.ToString(), entry.ReadBytes() ));
 				}
+				modsStatuses[modsCount] = new Tuple<string, string> ( folder, "loaded successfully" );
+				modsCount++;
 			}
 			for (int i = 0; i < filesBytes.Count; i++)
 			{
@@ -283,6 +289,8 @@ namespace PolyMod
 		internal static Sprite? GetSprite(string name, string style = "", int level = 0)
 		{
 			Sprite? sprite = null;
+			name = name.ToLower();
+			style = style.ToLower();
 			sprite = sprites.GetOrDefault($"{name}__", sprite);
 			sprite = sprites.GetOrDefault($"{name}_{style}_", sprite);
 			sprite = sprites.GetOrDefault($"{name}__{level}", sprite);
