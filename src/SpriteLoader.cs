@@ -1,6 +1,7 @@
 using HarmonyLib;
 using Polytopia.Data;
 using UnityEngine;
+using UnityEngine.U2D;
 
 namespace PolyMod
 {
@@ -99,6 +100,24 @@ namespace PolyMod
 				}
 			}
 			catch{}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteAtlasManager), nameof(SpriteAtlasManager.GetSpriteFromAtlas), new Type[] { typeof(SpriteAtlas), typeof(string) })]
+		private static void SpriteAtlasManager_GetSpriteFromAtlas(ref Sprite __result, SpriteAtlas spriteAtlas, string sprite)
+		{
+			try
+			{
+				string[] names = sprite.Split('_');
+				Sprite? newSprite = ModLoader.GetSprite(names[0], names[1]);
+				if(newSprite != null)
+				{
+					__result = newSprite;
+				}
+				return;
+			}
+			catch(Exception ex)
+			{}
 		}
 
 		[HarmonyPostfix]
