@@ -1,15 +1,14 @@
-using System.Reflection;
 using Cpp2IL.Core.Extensions;
 using HarmonyLib;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace PolyMod
 {
-    internal static class Visual {
-        private static bool isPolyModScreenOpened = false;
+    internal static class Visual
+    {
+        private static bool isPolymodScreenActive = false;
 
         [HarmonyPrefix]
 		[HarmonyPatch(typeof(SplashController), nameof(SplashController.LoadAndPlayClip))]
@@ -38,7 +37,7 @@ namespace PolyMod
 
             void OnPolyModButtonClick(int id, BaseEventData eventdata)
             {
-                isPolyModScreenOpened = true;
+                isPolymodScreenActive = true;
                 __instance.ShowBetaInfo();
             }
         }
@@ -47,30 +46,72 @@ namespace PolyMod
         [HarmonyPatch(typeof(UIScreenBase), nameof(UIScreenBase.Show))]
         private static void BetaInfoScreen_Show(UIScreenBase __instance, bool instant = false)
         {
-            if(isPolyModScreenOpened) // will change
+            if(isPolymodScreenActive)
             {
                 GameObject screenHeader = GameObject.Find("BetaInfoScreen/Header TMP");
-                screenHeader.GetComponent<TMPLocalizer>().Text = "PolyMod Hub";
+                screenHeader.GetComponent<TMPLocalizer>().Text = "-POLYMOD HUB-";
+
                 GameObject headerOne = GameObject.Find("BetaInfoScreen/Scroller/Container/Header TMP (1)");
                 headerOne.GetComponent<TMPLocalizer>().Text = "Welcome!";
+
                 GameObject parapgraphOne = GameObject.Find("BetaInfoScreen/Scroller/Container/Paragraph TMP");
-                parapgraphOne.GetComponent<TMPLocalizer>().Text = "";
+                parapgraphOne.GetComponent<TMPLocalizer>().Text = "Join us! Feel free to discuss mods, create them and ask for help!";
+
                 GameObject headerTwo = GameObject.Find("BetaInfoScreen/Scroller/Container/Header TMP (3)");
                 headerTwo.GetComponent<TMPLocalizer>().Text = "Mods";
+
                 GameObject parapgraphTwo = GameObject.Find("BetaInfoScreen/Scroller/Container/Paragraph TMP (2)");
-                parapgraphTwo.GetComponent<TMPLocalizer>().Text = "";
+
+                GameObject textButtonObject = GameObject.Find("BetaInfoScreen/Scroller/Container/TextButton");
+                textButtonObject.GetComponentInChildren<TMPLocalizer>().Text = "OUR DISCORD";
+                string modsText = "";
+                for (int i = 0; i < ModLoader.modsData.Count; i++)
+                {
+                    modsText += "Name: " + ModLoader.modsData[i].Item1.Replace(Plugin.MODS_PATH + @"\", "").Replace(".polymod", "").Replace(".polytale", "").Replace(".zip", "") + "\nStatus: " + ModLoader.modsData[i].Item2 + "\n\n";
+                }
+                parapgraphTwo.GetComponent<TMPLocalizer>().Text = modsText;
+                GameObject headerThree = GameObject.Find("BetaInfoScreen/Scroller/Container/Header TMP (4)");
+                headerThree.active = false;
+                GameObject parapgraphThree = GameObject.Find("BetaInfoScreen/Scroller/Container/Paragraph TMP (3)");
+                parapgraphThree.active = false;
+                GameObject divider = GameObject.Find("BetaInfoScreen/Scroller/Container/Divider");
+                divider.active = false;
+                GameObject dividerOne = GameObject.Find("BetaInfoScreen/Scroller/Container/Divider (1)");
+                dividerOne.active = false;
+                GameObject backButtonObject = GameObject.Find("BetaInfoScreen/BackButton");
+                UIButtonBase backButton = backButtonObject.GetComponent<UIButtonBase>();
+                backButton.OnClicked += (UIButtonBase.ButtonAction)BackButtonOnClicked;
+
+                void BackButtonOnClicked(int id, BaseEventData eventdata)
+                {
+                    UIManager.Instance.OnBack();
+                    isPolymodScreenActive = false;
+                }
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
+        private static void GameManager_Update()
+        {
+            if(isPolymodScreenActive)
+            {
                 GameObject textButton = GameObject.Find("BetaInfoScreen/Scroller/Container/TextButton");
-                textButton.GetComponentInChildren<TMPLocalizer>().Text = "OUR DISCORD";
-                isPolyModScreenOpened = false;
+                GameObject parapgraphTwo = GameObject.Find("BetaInfoScreen/Scroller/Container/Paragraph TMP (2)");
+                textButton.transform.position = parapgraphTwo.transform.position + new Vector3(0, 115, 0);
             }
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(BetaInfoScreen), nameof(BetaInfoScreen.OpenDiscordLink))]
-        private static bool BetaInfoScreen_OpenDiscordLink() // will change
+        private static bool BetaInfoScreen_OpenDiscordLink()
         {
-            NativeHelpers.OpenURL("https://discord.gg/eWPdhWtfVy", false);
-            return false;
+            if(isPolymodScreenActive)
+            {
+                NativeHelpers.OpenURL("https://discord.gg/eWPdhWtfVy", false);
+                return false;
+            }
+            return true;
         }
 
         internal static void Init() {
