@@ -196,6 +196,85 @@ namespace PolyMod
 			// }
 		}
 
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MeshCache), nameof(MeshCache.GetOrCreateMaterialPropertyBlock))]
+		private static bool MeshCache_GetOrCreateMaterialPropertyBlock(ref MaterialPropertyBlock __result, MeshCache __instance, string atlasName)
+		{
+			if (string.IsNullOrEmpty(atlasName))
+			{
+				__result = null;
+				return false;
+			}
+			MaterialPropertyBlock propertyBlock;
+			if (!__instance.cachedSpriteMaterialPropertyBlocks.TryGetValue(atlasName, out propertyBlock))
+			{
+				propertyBlock = new MaterialPropertyBlock();
+				propertyBlock.SetVector("_Flip", new Vector4(1f, 1f, 0f, 0f));
+				GameManager.GetSpriteAtlasManager().LoadSpriteAtlasTexture(atlasName, (Il2CppSystem.Action<UnityEngine.Texture2D>)getAtalasTex);
+				__instance.cachedSpriteMaterialPropertyBlocks[atlasName] = propertyBlock;
+			}
+			__result = propertyBlock;
+			return false;
+
+			void getAtalasTex(Texture2D texture)
+			{
+				if(texture != null)
+				{
+					//propertyBlock.SetTexture("_MainTex", ModLoader.sprites["fruit_minerskagg_"].texture);
+					propertyBlock.SetTexture("_MainTex", texture);
+				}
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(Tile), nameof(Tile.BatchSprites))]
+		private static bool Tile_BatchSprites(Tile __instance)
+		{
+			__instance.isDirty = false;
+			__instance.UnbatchRenderers();
+			__instance.UpdateSortedSpriteRenderers();
+			for (int i = 0; i < __instance.sortedSpriteRenderers.Count; i++)
+			{
+				PolytopiaSpriteRenderer polytopiaSpriteRenderer = __instance.sortedSpriteRenderers[i];
+				if (!(polytopiaSpriteRenderer == null) && polytopiaSpriteRenderer.SortingLayer == MeshCache.TERRAIN_LAYER_ID && polytopiaSpriteRenderer.HasSprite())
+				{
+					__instance.batchedSpriteRenderers.Add(polytopiaSpriteRenderer);
+				}
+			}
+			if (__instance.batchedSpriteRenderers.Count > 1)
+			{
+				CombineInstance[] array = new CombineInstance[__instance.batchedSpriteRenderers.Count];
+				for (int j = 0; j < __instance.batchedSpriteRenderers.Count; j++)
+				{
+					PolytopiaSpriteRenderer polytopiaSpriteRenderer2 = __instance.batchedSpriteRenderers[j];
+					Mesh mesh = polytopiaSpriteRenderer2.GetMesh();
+					array[j].mesh = mesh;
+					Matrix4x4 matrix4x = __instance.transform.worldToLocalMatrix * polytopiaSpriteRenderer2.transform.localToWorldMatrix;
+					array[j].transform = matrix4x;
+					polytopiaSpriteRenderer2.SetBatched(true);
+				}
+				if (__instance.combinedMeshFilter.sharedMesh == null)
+				{
+					__instance.combinedMeshFilter.sharedMesh = new Mesh();
+				}
+				else
+				{
+					__instance.combinedMeshFilter.sharedMesh.Clear();
+				}
+				__instance.combinedMeshFilter.sharedMesh.CombineMeshes(array);
+				__instance.combinedMeshFilter.gameObject.SetActive(true);
+				return false;
+			}
+			__instance.Unbatch();
+			return false;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SpriteAtlasManager), nameof(SpriteAtlasManager.GetAtlasNameForSprite), new Type[] { typeof(Sprite) })]
+		private static void SpriteAtlasManager_GetAtlasNameForSprite(Sprite sprite)
+		{
+		}
+
 		public static Sprite BuildSprite(byte[] data, Vector2 pivot)
 		{
 			Texture2D texture = new(1, 1);
