@@ -64,7 +64,6 @@ namespace PolyMod
 			Directory.CreateDirectory(Plugin.MODS_PATH);
 			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
 			string[] folders = Directory.GetDirectories(Plugin.MODS_PATH);
-			Dictionary<int, Tuple<string, byte[]>> filesBytes = new Dictionary<int, Tuple<string, byte[]>>();
 			int modsCount = 0;
 			foreach (string modname in mods)
 			{
@@ -82,7 +81,6 @@ namespace PolyMod
 				foreach(var filePath in Directory.GetFiles(folder)){
 					var entry = File.OpenRead(filePath);
 					files.Add(new Tuple<string, byte[]>(filePath.ToString(), entry.ReadBytes()));
-					filesBytes.Add(filesBytes.Count, new Tuple<string, byte[]> ( filePath.ToString(), entry.ReadBytes() ));
 				}
 				modsData[modsCount] = new Tuple<string, string, List<Tuple<string, byte[]>>>(folder, "loaded successfully", files);
 				modsCount++;
