@@ -1,9 +1,6 @@
 using HarmonyLib;
-using I2.Loc;
-using LibCpp2IL;
 using Polytopia.Data;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace PolyMod
 {
@@ -54,11 +51,15 @@ namespace PolyMod
 			string tribe;
 			try
 			{
-				if(ModLoader.gldDictionaryInversed.ContainsKey((int)__instance.Owner.tribe))
+				if(ModLoader.gldDictionaryInversed.ContainsKey((int)__instance.Owner.skinType))
+				{
+					tribe = ModLoader.gldDictionaryInversed[(int)__instance.Owner.skinType];
+				}
+				else if(ModLoader.gldDictionaryInversed.ContainsKey((int)__instance.Owner.tribe))
 				{
 					tribe = ModLoader.gldDictionaryInversed[(int)__instance.Owner.tribe];
 				}
-				else
+				else //TODO: add a check if there is a sprite for a skin
 				{
 					tribe = __instance.Owner.tribe.ToString();
 				}
@@ -76,12 +77,28 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Resource), nameof(Resource.SetVisible))]
 		private static void Resource_SetVisible(Resource __instance)
 		{
-			if (__instance.Owner == null) return;
-			__instance.Sprite
-					= ModLoader.GetSprite(
+			string tribe;
+			//__result = ModLoader.sprites["fruit_minerskagg_"];
+			try
+			{
+				if(ModLoader.gldDictionaryInversed.ContainsKey(ModLoader.climateToTribeData[__instance.tile.data.climate]))
+				{
+					tribe = ModLoader.gldDictionaryInversed[ModLoader.climateToTribeData[__instance.tile.data.climate]];
+				}
+				else
+				{
+					tribe = ((TribeData.Type)__instance.tile.data.climate).ToString();
+				}
+				Sprite? sprite = ModLoader.GetSprite(
 						EnumCache<ResourceData.Type>.GetName(__instance.data.type).ToLower(), 
-						ModLoader.gldDictionaryInversed[(int)__instance.Owner.tribe]
+						tribe
 					);
+				if(sprite != null)
+				{
+					__instance.Sprite = sprite;
+				}
+			}
+			catch{}
 		}
 
 		[HarmonyPostfix]

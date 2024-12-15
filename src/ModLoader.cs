@@ -24,8 +24,8 @@ namespace PolyMod
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static Dictionary<int, Tuple<string, string>> modsStatuses = new Dictionary<int, Tuple<string, string>>();
-		public static int initialTribesCount = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
-		public static int initialSkinsCount = (int)Enum.GetValues(typeof(SkinType)).Cast<SkinType>().Last();
+		public static Dictionary<int, int> climateToTribeData = new();
+		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static bool shouldInitializeSprites = true;
 
 
@@ -40,14 +40,14 @@ namespace PolyMod
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsTribeUnlocked))]
 		private static void PurchaseManager_IsTribeUnlocked(ref bool __result, TribeData.Type type)
 		{
-			__result = (int)type >= (initialTribesCount + 1) || __result;
+			__result = (int)type >= Plugin.AUTOIDX_STARTS_FROM || __result;
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsSkinUnlocked))]
 		private static void PurchaseManager_IsSkinUnlocked(ref bool __result, SkinType skinType)
 		{
-			__result = ((int)skinType > initialSkinsCount && (int)skinType != 2000)  || __result;
+			__result = ((int)skinType >= Plugin.AUTOIDX_STARTS_FROM && (int)skinType != 2000)  || __result;
 		}
 
 		[HarmonyPrefix]
@@ -111,7 +111,7 @@ namespace PolyMod
 				}
 				if (Path.GetFileName(name) == "patch.json")
 				{
-					//Plugin.logger.LogInfo($"Registried patch from {modname}"); TODO: fix
+					Plugin.logger.LogInfo($"Registried patch from {name}");
 					_patches.Add(JObject.Parse(new StreamReader(new MemoryStream(bytes)).ReadToEnd()));
 				}
 				if (Path.GetExtension(name) == ".png")
@@ -163,7 +163,9 @@ namespace PolyMod
 				foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 				{
 					JObject token = jtoken.Cast<JObject>();
-					TermData term = LocalizationManager.Sources[0].AddTerm(GetJTokenName(token).Replace('_', '.'));
+					string name = GetJTokenName(token).Replace('_', '.');
+					if (name.StartsWith("tribeskins")) name = "TribeSkins/" + name;
+					TermData term = LocalizationManager.Sources[0].AddTerm(name);
 
 					List<string> strings = new List<string>();
 					Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
@@ -234,6 +236,8 @@ namespace PolyMod
 								token["idx"] = _autoidx;
 								gldDictionary[id] = _autoidx;
 								EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
+								climateToTribeData[climateAutoidx] = _autoidx;
+								++climateAutoidx;
 								break;
 							case "techData":
 								++_autoidx;

@@ -1,0 +1,4 @@
+requests
+pyinstaller
+customtkinter
+CTkMessagebox
