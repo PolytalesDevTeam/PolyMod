@@ -15,15 +15,45 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
+		public record FilePair(string name, byte[] bytes);
+		public class Mod
+		{
+			public string name;
+			public Status status;
+			public List<FilePair> files;
+
+			public Mod(string name, Status status, List<FilePair> files)
+			{
+				this.name = name;
+				this.status = status;
+				this.files = files;
+			}
+
+			public enum Status
+			{
+				SUCCESS,
+				ERROR,
+			}
+
+			public string GetPrettyStatus()
+			{
+				return status switch
+				{
+					Status.SUCCESS => "loaded successfully",
+					Status.ERROR => "had loading error",
+					_ => throw new InvalidOperationException(),
+				};
+			}
+		}
+
 		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static Stopwatch _stopwatch = new();
 		public static Dictionary<string, Sprite> sprites = new();
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
-		public static Dictionary<int, Tuple<string, string, List<Tuple<string, byte[]>>>> modsData = new Dictionary<int, Tuple<string, string, List<Tuple<string, byte[]>>>>();
+		public static List<Mod> mods = new();
 		public static Dictionary<int, int> climateToTribeData = new();
 		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
-		public static bool shouldInitializeSprites = true;
 
 
 		[HarmonyPrefix]
@@ -44,7 +74,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(PurchaseManager), nameof(PurchaseManager.IsSkinUnlocked))]
 		private static void PurchaseManager_IsSkinUnlocked(ref bool __result, SkinType skinType)
 		{
-			__result = ((int)skinType >= Plugin.AUTOIDX_STARTS_FROM && (int)skinType != 2000)  || __result;
+			__result = ((int)skinType >= Plugin.AUTOIDX_STARTS_FROM && (int)skinType != 2000) || __result;
 		}
 
 		[HarmonyPrefix]
@@ -61,7 +91,8 @@ namespace PolyMod
 		[HarmonyPatch(typeof(SelectTribePopup), nameof(SelectTribePopup.SetDescription))]
 		private static void SetDescription(SelectTribePopup __instance)
 		{
-			if((int)__instance.SkinType >= Plugin.AUTOIDX_STARTS_FROM){
+			if ((int)__instance.SkinType >= Plugin.AUTOIDX_STARTS_FROM)
+			{
 				__instance.Description = Localization.Get(__instance.SkinType.GetLocalizationDescriptionKey()) + "\n\n" + Localization.GetSkinned(__instance.SkinType, __instance.tribeData.description2, new Il2CppSystem.Object[]
 				{
 					__instance.tribeName,
@@ -74,44 +105,41 @@ namespace PolyMod
 		{
 			_stopwatch.Start();
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
+
 			Directory.CreateDirectory(Plugin.MODS_PATH);
-			string[] mods = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
+			string[] archives = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
 			string[] folders = Directory.GetDirectories(Plugin.MODS_PATH);
-			int modsCount = 0;
-			foreach (string modname in mods)
+
+			foreach (string archive in archives)
 			{
-				ZipArchive mod = new(File.OpenRead(modname));
-				List<Tuple<string, byte[]>> files = new List<Tuple<string, byte[]>>();
-				foreach (var entry in mod.Entries)
+				ZipArchive zipArchive = new(File.OpenRead(archive));
+				List<FilePair> files = new();
+				foreach (var entry in zipArchive.Entries)
 				{
-					files.Add(new Tuple<string, byte[]>(entry.ToString(), entry.ReadBytes()));
+					files.Add(new(entry.ToString(), entry.ReadBytes()));
 				}
-				modsData[modsCount] = new Tuple<string, string, List<Tuple<string, byte[]>>>(modname, "loaded successfully", files);
-				modsCount++;
+				mods.Add(new(Path.GetFileNameWithoutExtension(archive), Mod.Status.SUCCESS, files));
 			}
-			foreach(var folder in folders){
-				List<Tuple<string, byte[]>> files = new List<Tuple<string, byte[]>>();
-				foreach(var filePath in Directory.GetFiles(folder)){
-					var entry = File.OpenRead(filePath);
-					files.Add(new Tuple<string, byte[]>(filePath.ToString(), entry.ReadBytes()));
-				}
-				modsData[modsCount] = new Tuple<string, string, List<Tuple<string, byte[]>>>(folder, "loaded successfully", files);
-				modsCount++;
-			}
-			for (int i = 0; i < modsData.Count; i++)
+			foreach (var folder in folders)
 			{
-				Tuple<string, string, List<Tuple<string, byte[]>>> data = modsData[i];
-				string modStatus = data.Item2;
-				List<Tuple<string, byte[]>> filesInfo = data.Item3;
-				foreach (Tuple<string, byte[]> fileInfo in filesInfo)
+				List<FilePair> files = new();
+				foreach (var file in Directory.GetFiles(folder))
 				{
-					string name = fileInfo.Item1;
-					byte[] bytes = fileInfo.Item2;
-					if (Path.GetExtension(name) == ".dll")
+					var entry = File.OpenRead(file);
+					files.Add(new(file.ToString(), entry.ReadBytes()));
+				}
+				mods.Add(new(Path.GetFileNameWithoutExtension(folder), Mod.Status.SUCCESS, files));
+			}
+
+			foreach (var mod in mods)
+			{
+				foreach (var file in mod.files)
+				{
+					if (Path.GetExtension(file.name) == ".dll")
 					{
 						try
 						{
-							Assembly assembly = Assembly.Load(bytes);
+							Assembly assembly = Assembly.Load(file.bytes);
 							foreach (Type type in assembly.GetTypes())
 							{
 								type.GetMethod("Load")?.Invoke(null, null);
@@ -122,14 +150,13 @@ namespace PolyMod
 							if (exception.InnerException != null)
 							{
 								Plugin.logger.LogError(exception.InnerException.Message);
-								modStatus = "had loading error";
+								mod.status = Mod.Status.ERROR;
 							}
 						}
 					}
 				}
-				Tuple<string, string, List<Tuple<string, byte[]>>> modifiedData = new Tuple<string, string, List<Tuple<string, byte[]>>>(data.Item1, modStatus, filesInfo);
-				modsData[i] = modifiedData;
 			}
+
 			_stopwatch.Stop();
 		}
 
@@ -137,45 +164,40 @@ namespace PolyMod
 		{
 			_stopwatch.Start();
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
-			for (int i = 0; i < modsData.Count; i++)
+
+			foreach (var mod in mods)
 			{
-				Tuple<string, string, List<Tuple<string, byte[]>>> data = modsData[i];
-				string modStatus = data.Item2;
-				List<Tuple<string, byte[]>> filesInfo = data.Item3;
-				foreach (Tuple<string, byte[]> fileInfo in filesInfo)
+				foreach (var file in mod.files)
 				{
-					string name = fileInfo.Item1;
-					byte[] bytes = fileInfo.Item2;
-					if (Path.GetFileName(name) == "patch.json")
+					if (Path.GetFileName(file.name) == "patch.json")
 					{
 						try
 						{
-							Plugin.logger.LogInfo($"Registried patch from {name}");
-							GameLogicDataPatch(gameLogicdata, JObject.Parse(new StreamReader(new MemoryStream(bytes)).ReadToEnd()));
+							Plugin.logger.LogInfo($"Registried patch from {mod.name}");
+							GameLogicDataPatch(gameLogicdata, JObject.Parse(new StreamReader(new MemoryStream(file.bytes)).ReadToEnd()));
 						}
-						catch(Exception ex) {
-							Plugin.logger.LogInfo($"Patch error: {ex.Message}");
-							modStatus = "had loading error";
+						catch (Exception e)
+						{
+							Plugin.logger.LogInfo($"Patch error: {e.Message}");
+							mod.status = Mod.Status.ERROR;
 						}
 					}
-					if (Path.GetExtension(name) == ".png" && shouldInitializeSprites)
+					if (Path.GetExtension(file.name) == ".png")
 					{
-						Vector2 pivot = Path.GetFileNameWithoutExtension(name).Split("_")[0] switch
+						Vector2 pivot = Path.GetFileNameWithoutExtension(file.name).Split("_")[0] switch
 						{
 							"field" => new(0.5f, 0.0f),
 							"mountain" => new(0.5f, -0.375f),
 							_ => new(0.5f, 0.5f),
 						};
-						Sprite sprite = SpritesLoader.BuildSprite(bytes, pivot);
-						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(name), sprite);
-						sprites.Add(Path.GetFileNameWithoutExtension(name), sprite);
+						Sprite sprite = SpritesLoader.BuildSprite(file.bytes, pivot);
+						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(file.name), sprite);
+						sprites.Add(Path.GetFileNameWithoutExtension(file.name), sprite);
 					}
 				}
-				Tuple<string, string, List<Tuple<string, byte[]>>> modifiedData = new Tuple<string, string, List<Tuple<string, byte[]>>>(data.Item1, modStatus, filesInfo);
-				modsData[i] = modifiedData;
 			}
+
 			gldDictionaryInversed = gldDictionary.ToDictionary((i) => i.Value, (i) => i.Key);
-			shouldInitializeSprites = false;
 			_stopwatch.Stop();
 			Plugin.logger.LogInfo($"Elapsed time: {_stopwatch.ElapsedMilliseconds}ms");
 		}
