@@ -54,6 +54,7 @@ namespace PolyMod
 		public static List<Mod> mods = new();
 		public static Dictionary<int, int> climateToTribeData = new();
 		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
+		public static bool shouldInitializeSprites = true;
 
 
 		[HarmonyPrefix]
@@ -182,7 +183,7 @@ namespace PolyMod
 							mod.status = Mod.Status.ERROR;
 						}
 					}
-					if (Path.GetExtension(file.name) == ".png")
+					if (Path.GetExtension(file.name) == ".png" && shouldInitializeSprites)
 					{
 						Vector2 pivot = Path.GetFileNameWithoutExtension(file.name).Split("_")[0] switch
 						{
@@ -198,6 +199,7 @@ namespace PolyMod
 			}
 
 			gldDictionaryInversed = gldDictionary.ToDictionary((i) => i.Value, (i) => i.Key);
+			shouldInitializeSprites = false;
 			_stopwatch.Stop();
 			Plugin.logger.LogInfo($"Elapsed time: {_stopwatch.ElapsedMilliseconds}ms");
 		}
