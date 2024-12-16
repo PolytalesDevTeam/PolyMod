@@ -116,7 +116,7 @@ namespace PolyMod
 				}
 				return;
 			}
-			catch(Exception ex)
+			catch(Exception)
 			{}
 		}
 

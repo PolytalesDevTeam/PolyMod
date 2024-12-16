@@ -57,6 +57,19 @@ namespace PolyMod
 			}
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(SelectTribePopup), nameof(SelectTribePopup.SetDescription))]
+		private static void SetDescription(SelectTribePopup __instance)
+		{
+			if((int)__instance.SkinType >= Plugin.AUTOIDX_STARTS_FROM){
+				__instance.Description = Localization.Get(__instance.SkinType.GetLocalizationDescriptionKey()) + "\n\n" + Localization.GetSkinned(__instance.SkinType, __instance.tribeData.description2, new Il2CppSystem.Object[]
+				{
+					__instance.tribeName,
+					Localization.Get(__instance.startTechSid, Array.Empty<Il2CppSystem.Object>())
+				});
+			}
+		}
+
 		public static void Init()
 		{
 			_stopwatch.Start();
