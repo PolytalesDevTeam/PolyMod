@@ -17,10 +17,10 @@ namespace PolyMod
 		internal static readonly JsonMergeSettings GLD_MERGE_SETTINGS = new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge };
 
 #pragma warning disable CS8618
-        internal static ManualLogSource logger;
+		internal static ManualLogSource logger;
 #pragma warning restore CS8618
 
-        public override void Load()
+		public override void Load()
 		{
 			logger = Log;
 			ModLoader.Init();
@@ -30,11 +30,12 @@ namespace PolyMod
 			logger.LogInfo("PolyMod has been successfully loaded.");
 		}
 
-		internal static Stream GetResource(string id) {
-            return Assembly.GetExecutingAssembly().GetManifestResourceStream(
+		internal static Stream GetResource(string id)
+		{
+			return Assembly.GetExecutingAssembly().GetManifestResourceStream(
 				$"{typeof(Plugin).Namespace}.resources.{id}"
 			)!;
-        }
+		}
 
 		internal static Il2CppSystem.Type WrapType<T>() where T : class
 		{
