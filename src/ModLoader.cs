@@ -253,53 +253,35 @@ namespace PolyMod
 						string id = GetJTokenName(token);
 						string dataType = GetJTokenName(token, 2);
 						Plugin.logger.LogInfo("Creating mapping for " + dataType + " with id: " + id + "and index: " + (_autoidx + 1));
+						++_autoidx;
+						token["idx"] = _autoidx;
+						gldDictionary[id] = _autoidx;
 						switch (dataType)
 						{
 							case "tribeData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
 								climateToTribeData[climateAutoidx] = _autoidx;
 								++climateAutoidx;
 								break;
 							case "techData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
 								break;
 							case "unitData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
 								PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
 								break;
 							case "improvementData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
 								PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
 								break;
 							case "terrainData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
 								break;
 							case "resourceData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
 								PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
 								break;
 							case "taskData":
-								++_autoidx;
-								token["idx"] = _autoidx;
-								gldDictionary[id] = _autoidx;
 								EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
 								break;
 						}
