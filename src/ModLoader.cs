@@ -15,27 +15,28 @@ namespace PolyMod
 {
 	internal static class ModLoader
 	{
-		public record FilePair(string name, byte[] bytes);
-		public class Mod
+		internal class Mod
 		{
-			public string name;
-			public Status status;
-			public List<FilePair> files;
+			internal record File(string name, byte[] bytes);
 
-			public Mod(string name, Status status, List<FilePair> files)
+			internal string name;
+			internal Status status;
+			internal List<File> files;
+
+			internal Mod(string name, Status status, List<File> files)
 			{
 				this.name = name;
 				this.status = status;
 				this.files = files;
 			}
 
-			public enum Status
+			internal enum Status
 			{
 				SUCCESS,
 				ERROR,
 			}
 
-			public string GetPrettyStatus()
+			internal string GetPrettyStatus()
 			{
 				return status switch
 				{
@@ -102,7 +103,7 @@ namespace PolyMod
 			}
 		}
 
-		public static void Init()
+		internal static void Init()
 		{
 			_stopwatch.Start();
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
@@ -114,7 +115,7 @@ namespace PolyMod
 			foreach (string archive in archives)
 			{
 				ZipArchive zipArchive = new(File.OpenRead(archive));
-				List<FilePair> files = new();
+				List<Mod.File> files = new();
 				foreach (var entry in zipArchive.Entries)
 				{
 					files.Add(new(entry.ToString(), entry.ReadBytes()));
@@ -123,7 +124,7 @@ namespace PolyMod
 			}
 			foreach (var folder in folders)
 			{
-				List<FilePair> files = new();
+				List<Mod.File> files = new();
 				foreach (var file in Directory.GetFiles(folder))
 				{
 					var entry = File.OpenRead(file);
@@ -161,7 +162,7 @@ namespace PolyMod
 			_stopwatch.Stop();
 		}
 
-		public static void Load(JObject gameLogicdata)
+		internal static void Load(JObject gameLogicdata)
 		{
 			_stopwatch.Start();
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
