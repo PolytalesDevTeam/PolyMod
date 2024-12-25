@@ -4,9 +4,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<RestoreAdditionalProjectSources>
-		https://api.nuget.org/v3/index.json;
+    https://api.nuget.org/v3/index.json;
 		https://nuget.bepinex.dev/v3/index.json;
 		https://nuget.samboy.dev/v3/index.json;
+    https://polymod.dev/nuget/v3/index.json;
 	</RestoreAdditionalProjectSources>
 	<Configurations>IL2CPP</Configurations>
   </PropertyGroup>
