@@ -145,13 +145,14 @@ namespace PolyMod
 							foreach (Type type in assembly.GetTypes())
 							{
 								type.GetMethod("Load")?.Invoke(null, null);
+								Plugin.logger.LogInfo($"Invoking Load method from {assembly.GetName().Name} assembly from {mod.name} mod");
 							}
 						}
 						catch (TargetInvocationException exception)
 						{
 							if (exception.InnerException != null)
 							{
-								Plugin.logger.LogError(exception.InnerException.Message);
+								Plugin.logger.LogInfo($"Error on loading assembly from {mod.name} mod: {exception.InnerException.Message}");
 								mod.status = Mod.Status.ERROR;
 							}
 						}
@@ -175,12 +176,12 @@ namespace PolyMod
 					{
 						try
 						{
-							Plugin.logger.LogInfo($"Registried patch from {mod.name}");
 							GameLogicDataPatch(gameLogicdata, JObject.Parse(new StreamReader(new MemoryStream(file.bytes)).ReadToEnd()));
+							Plugin.logger.LogInfo($"Registried patch from {mod.name} mod");
 						}
 						catch (Exception e)
 						{
-							Plugin.logger.LogInfo($"Patch error: {e.Message}");
+							Plugin.logger.LogInfo($"Error on loading patch from {mod.name} mod: {e.Message}");
 							mod.status = Mod.Status.ERROR;
 						}
 					}
@@ -202,123 +203,116 @@ namespace PolyMod
 			gldDictionaryInversed = gldDictionary.ToDictionary((i) => i.Value, (i) => i.Key);
 			shouldInitializeSprites = false;
 			_stopwatch.Stop();
-			Plugin.logger.LogInfo($"Elapsed time: {_stopwatch.ElapsedMilliseconds}ms");
+			Plugin.logger.LogInfo($"Loaded all mods in {_stopwatch.ElapsedMilliseconds / 1000f} seconds");
 		}
 
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
 		{
-			try
+			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
 			{
-				foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
+				JObject token = jtoken.Cast<JObject>();
+				string name = GetJTokenName(token).Replace('_', '.');
+				if (name.StartsWith("tribeskins")) name = "TribeSkins/" + name;
+				TermData term = LocalizationManager.Sources[0].AddTerm(name);
+
+				List<string> strings = new();
+				Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
+
+				foreach (string language in availableLanguages)
 				{
-					JObject token = jtoken.Cast<JObject>();
-					string name = GetJTokenName(token).Replace('_', '.');
-					if (name.StartsWith("tribeskins")) name = "TribeSkins/" + name;
-					TermData term = LocalizationManager.Sources[0].AddTerm(name);
-
-					List<string> strings = new List<string>();
-					Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
-
-					foreach (string language in availableLanguages)
+					if (token.TryGetValue(language, out JToken localizedString))
 					{
-						if (token.TryGetValue(language, out JToken localizedString))
-						{
-							strings.Add((string)localizedString);
-						}
-						else
-						{
-							strings.Add(term.Term);
-						}
+						strings.Add((string)localizedString);
 					}
-					term.Languages = new Il2CppStringArray(strings.ToArray());
-				}
-
-				patch.Remove("localizationData");
-
-				foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
-				{
-					JObject token = jtoken.Cast<JObject>();
-
-					if (token["skins"] != null)
+					else
 					{
-						JArray skinsArray = token["skins"].Cast<JArray>();
-						Dictionary<string, int> skinsToReplace = new Dictionary<string, int>();
-
-						foreach (var skin in skinsArray._values)
-						{
-							string skinValue = skin.ToString();
-
-							if (!Enum.TryParse<SkinType>(skinValue, out _))
-							{
-								Plugin.logger.LogInfo($"Creating mapping for non-existent SkinType: {skinValue}");
-								EnumCache<SkinType>.AddMapping(skinValue, (SkinType)_autoidx);
-								skinsToReplace[skinValue] = _autoidx;
-								gldDictionary[skinValue] = _autoidx;
-								_autoidx++;
-							}
-						}
-
-						foreach (var entry in skinsToReplace)
-						{
-							if (skinsArray._values.Contains(entry.Key))
-							{
-								skinsArray._values.Remove(entry.Key);
-								skinsArray._values.Add(entry.Value);
-							}
-						}
+						strings.Add(term.Term);
 					}
 				}
-
-				foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
-				{
-					JObject token = jtoken.Cast<JObject>();
-
-					if (token["idx"] != null && (int)token["idx"] == -1)
-					{
-						string id = GetJTokenName(token);
-						string dataType = GetJTokenName(token, 2);
-						Plugin.logger.LogInfo("Creating mapping for " + dataType + " with id: " + id + "and index: " + (_autoidx + 1));
-						++_autoidx;
-						token["idx"] = _autoidx;
-						gldDictionary[id] = _autoidx;
-						switch (dataType)
-						{
-							case "tribeData":
-								EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
-								climateToTribeData[climateAutoidx] = _autoidx;
-								++climateAutoidx;
-								break;
-							case "techData":
-								EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
-								break;
-							case "unitData":
-								EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
-								PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
-								break;
-							case "improvementData":
-								EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
-								PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
-								break;
-							case "terrainData":
-								EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
-								break;
-							case "resourceData":
-								EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
-								PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
-								break;
-							case "taskData":
-								EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
-								break;
-						}
-					}
-				}
-
-				gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
+				term.Languages = new Il2CppStringArray(strings.ToArray());
 			}
-			catch (Exception exception)
+
+			patch.Remove("localizationData");
+
+			foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
 			{
-				Plugin.logger.LogError(exception.Message);
+				JObject token = jtoken.Cast<JObject>();
+
+				if (token["skins"] != null)
+				{
+					JArray skinsArray = token["skins"].Cast<JArray>();
+					Dictionary<string, int> skinsToReplace = new();
+
+					foreach (var skin in skinsArray._values)
+					{
+						string skinValue = skin.ToString();
+
+						if (!Enum.TryParse<SkinType>(skinValue, out _))
+						{
+							EnumCache<SkinType>.AddMapping(skinValue, (SkinType)_autoidx);
+							skinsToReplace[skinValue] = _autoidx;
+							gldDictionary[skinValue] = _autoidx;
+							_autoidx++;
+							Plugin.logger.LogInfo($"Created mapping for skin: {skinValue}");
+						}
+					}
+
+					foreach (var entry in skinsToReplace)
+					{
+						if (skinsArray._values.Contains(entry.Key))
+						{
+							skinsArray._values.Remove(entry.Key);
+							skinsArray._values.Add(entry.Value);
+						}
+					}
+				}
 			}
+
+			foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
+			{
+				JObject token = jtoken.Cast<JObject>();
+
+				if (token["idx"] != null && (int)token["idx"] == -1)
+				{
+					string id = GetJTokenName(token);
+					string dataType = GetJTokenName(token, 2);
+					_autoidx++;
+					token["idx"] = _autoidx;
+					gldDictionary[id] = _autoidx;
+					switch (dataType)
+					{
+						case "tribeData":
+							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
+							climateToTribeData[climateAutoidx] = _autoidx;
+							++climateAutoidx;
+							break;
+						case "techData":
+							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
+							break;
+						case "unitData":
+							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
+							PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
+							break;
+						case "improvementData":
+							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
+							PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+							break;
+						case "terrainData":
+							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
+							break;
+						case "resourceData":
+							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
+							PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
+							break;
+						case "taskData":
+							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
+							break;
+					}
+					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + "and index " + _autoidx);
+				}
+			}
+
+			gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
 		}
 
 		internal static Sprite? GetSprite(string name, string style = "", int level = 0)

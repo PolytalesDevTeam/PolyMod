@@ -27,7 +27,6 @@ namespace PolyMod
 			Visual.Init();
 			SpritesLoader.Init();
 			//PolyBreaker.Init();
-			logger.LogInfo("PolyMod has been successfully loaded.");
 		}
 
 		internal static Stream GetResource(string id)
