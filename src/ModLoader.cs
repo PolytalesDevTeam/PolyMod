@@ -203,7 +203,7 @@ namespace PolyMod
 			gldDictionaryInversed = gldDictionary.ToDictionary((i) => i.Value, (i) => i.Key);
 			shouldInitializeSprites = false;
 			_stopwatch.Stop();
-			Plugin.logger.LogInfo($"Loaded all mods in {_stopwatch.ElapsedMilliseconds / 1000f} seconds");
+			Plugin.logger.LogInfo($"Loaded all mods in {_stopwatch.ElapsedMilliseconds}ms");
 		}
 
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
@@ -252,8 +252,8 @@ namespace PolyMod
 							EnumCache<SkinType>.AddMapping(skinValue, (SkinType)_autoidx);
 							skinsToReplace[skinValue] = _autoidx;
 							gldDictionary[skinValue] = _autoidx;
+							Plugin.logger.LogInfo("Created mapping for skin with id " + skinValue + " and index " + _autoidx);
 							_autoidx++;
-							Plugin.logger.LogInfo($"Created mapping for skin: {skinValue}");
 						}
 					}
 
@@ -276,15 +276,13 @@ namespace PolyMod
 				{
 					string id = GetJTokenName(token);
 					string dataType = GetJTokenName(token, 2);
-					_autoidx++;
 					token["idx"] = _autoidx;
 					gldDictionary[id] = _autoidx;
 					switch (dataType)
 					{
 						case "tribeData":
 							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
-							climateToTribeData[climateAutoidx] = _autoidx;
-							++climateAutoidx;
+							climateToTribeData[climateAutoidx++] = _autoidx;
 							break;
 						case "techData":
 							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
@@ -309,6 +307,7 @@ namespace PolyMod
 							break;
 					}
 					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + "and index " + _autoidx);
+					_autoidx++;
 				}
 			}
 
