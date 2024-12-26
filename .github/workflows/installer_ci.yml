@@ -30,6 +30,11 @@ jobs:
       with:
         name: ${{ matrix.os }}
         path: installer/dist/
+  merge:
+    name: Merge artifacts
+    runs-on: ubuntu-latest
+    needs: job
+    steps:
     - uses: actions/upload-artifact/merge@v4
       with:
         name: artifacts

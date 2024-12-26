@@ -1,5 +1,5 @@
-import os
 import io
+import os
 import sys
 import zipfile
 import requests
