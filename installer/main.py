@@ -42,9 +42,9 @@ def install():
             raise FileNotFoundError
     except FileNotFoundError:
         messagebox.CTkMessagebox(
-            title="Error", 
-            message="Folder not found or not valid!", 
-            icon="cancel", 
+            title="Error",
+            message="The folder does not exist or is not valid!",
+            icon="cancel",
             width=100,
             height=50
         )
@@ -75,9 +75,11 @@ def _install(path):
     config = configparser.ConfigParser()
     config.read_file(config_file)
     if "Logging.Console" in config:
-        config["Logging.Console"]["Enabled"] = not bool(disable_logs_button.get())
+        config["Logging.Console"]["Enabled"] = not bool(
+            disable_logs_button.get())
     else:
-        config["Logging.Console"] = {"Enabled": not bool(disable_logs_button.get())}
+        config["Logging.Console"] = {
+            "Enabled": not bool(disable_logs_button.get())}
     config.write(config_file)
     progress_bar.step()
 
@@ -97,8 +99,10 @@ app.title("PolyMod")
 app.iconbitmap(default=resource_path("icon.ico"))
 app.resizable(False, False)
 
-path_entry = customtkinter.CTkEntry(app, placeholder_text="Game path", width=228)
-browse_button = customtkinter.CTkButton(app, text="Browse", command=browse, width=1)
+path_entry = customtkinter.CTkEntry(
+    app, placeholder_text="Game path", width=228)
+browse_button = customtkinter.CTkButton(
+    app, text="Browse", command=browse, width=1)
 disable_logs_button = customtkinter.CTkCheckBox(app, text="Disable logs")
 disable_logs_button.select()
 install_button = customtkinter.CTkButton(app, text="Install", command=install)
