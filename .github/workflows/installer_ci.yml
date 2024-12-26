@@ -30,4 +30,8 @@ jobs:
       with:
         name: ${{ matrix.os }}
         path: installer/dist/
+    - uses: actions/upload-artifact/merge@v4
+      with:
+        name: artifacts
+        delete-merged: true
     

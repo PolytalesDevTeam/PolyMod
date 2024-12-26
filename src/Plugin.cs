@@ -1,8 +1,10 @@
 ﻿using System.Reflection;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Injection;
+using LibCpp2IL;
 using Newtonsoft.Json.Linq;
 
 namespace PolyMod
@@ -26,6 +28,7 @@ namespace PolyMod
 			ModLoader.Init();
 			Visual.Init();
 			SpritesLoader.Init();
+			ConfigFile.CoreConfig[new("Logging.Disk", "WriteUnityLog")].BoxedValue = true;
 			//PolyBreaker.Init();
 		}
 

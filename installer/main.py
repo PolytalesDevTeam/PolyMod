@@ -74,12 +74,12 @@ def _install(path):
     config_file = open(path + "/BepInEx/config/BepInEx.cfg", "a+")
     config = configparser.ConfigParser()
     config.read_file(config_file)
+    logs = not bool(disable_logs_button.get())
     if "Logging.Console" in config:
-        config["Logging.Console"]["Enabled"] = not bool(
-            disable_logs_button.get())
+        config["Logging.Console"]["Enabled"] = logs
     else:
         config["Logging.Console"] = {
-            "Enabled": not bool(disable_logs_button.get())}
+            "Enabled": logs}
     config.write(config_file)
     progress_bar.step()
 
