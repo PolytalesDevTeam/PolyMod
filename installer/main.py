@@ -13,7 +13,7 @@ OS = {
     "posix": "linux",
 }[os.name]
 BEPINEX = f"725/BepInEx-Unity.IL2CPP-{OS}-x64-6.0.0-be.725%2Be1974e2"
-POLYMOD = "https://github.com/PolytalesDevTeam/PolyMod/releases/latest/download/PolyMod.dll"
+POLYMOD = "https://github.com/PolyModdingTeam/PolyMod/releases/latest/download/PolyMod.dll"
 
 
 def resource_path(path):

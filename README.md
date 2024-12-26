@@ -1,6 +1,6 @@
 ﻿# PolyMod
 
-![](https://img.shields.io/github/downloads/PolyModTeam/PolyMod/total) ![](https://img.shields.io/github/repo-size/PolyModTeam/PolyMod)
+![](https://img.shields.io/github/downloads/PolyModdingTeam/PolyMod/total) ![](https://img.shields.io/github/repo-size/PolyModdingTeam/PolyMod)
 
 ## Compatibility
 
