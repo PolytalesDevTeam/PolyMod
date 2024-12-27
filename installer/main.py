@@ -9,9 +9,10 @@ import customtkinter
 import CTkMessagebox as messagebox
 
 OS = {
-    "nt": "win",
-    "posix": "linux",
-}[os.name]
+    "win32": "win",
+    "linux2": "linux",
+    "darwin": "macos",
+}[sys.platform]
 BEPINEX = f"725/BepInEx-Unity.IL2CPP-{OS}-x64-6.0.0-be.725%2Be1974e2"
 POLYMOD = "https://github.com/PolyModdingTeam/PolyMod/releases/latest/download/PolyMod.dll"
 
