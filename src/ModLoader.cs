@@ -269,10 +269,10 @@ namespace PolyMod
 
 				if (token["skins"] != null)
 				{
-					JArray skinsArray = token["skins"].Cast<JArray>();
+					JArray skins = token["skins"].Cast<JArray>();
 					Dictionary<string, int> skinsToReplace = new();
 
-					foreach (var skin in skinsArray._values)
+					foreach (var skin in skins._values)
 					{
 						string skinValue = skin.ToString();
 
@@ -288,11 +288,17 @@ namespace PolyMod
 
 					foreach (var entry in skinsToReplace)
 					{
-						if (skinsArray._values.Contains(entry.Key))
+						if (skins._values.Contains(entry.Key))
 						{
-							skinsArray._values.Remove(entry.Key);
-							skinsArray._values.Add(entry.Value);
+							skins._values.Remove(entry.Key);
+							skins._values.Add(entry.Value);
 						}
+					}
+
+					JToken originalSkins = gld.SelectToken(skins.Path, false);
+					if (originalSkins != null)
+					{
+						skins.Merge(originalSkins);
 					}
 				}
 			}
