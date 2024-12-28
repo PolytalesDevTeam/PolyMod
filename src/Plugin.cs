@@ -16,7 +16,6 @@ namespace PolyMod
 		internal const int AUTOIDX_STARTS_FROM = 1000;
 		internal static readonly string BASE_PATH = Path.Combine(BepInEx.Paths.BepInExRootPath, "..");
 		internal static readonly string MODS_PATH = Path.Combine(BASE_PATH, "Mods");
-		internal static readonly JsonMergeSettings GLD_MERGE_SETTINGS = new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge };
 
 #pragma warning disable CS8618
 		internal static ManualLogSource logger;

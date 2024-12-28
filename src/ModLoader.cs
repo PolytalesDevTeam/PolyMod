@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace PolyMod
@@ -148,17 +149,20 @@ namespace PolyMod
 					}
 				}
 
-				if (manifest != null)
+				if (manifest != null
+					&& manifest.id != null
+					&& Regex.IsMatch(manifest.id, @"^[a-zA-Z_]+$")
+					&& manifest.version != null
+					&& manifest.authors != null
+					&& manifest.authors.Length != 0
+				)
 				{
-					if (manifest.id != null && manifest.version != null && manifest.authors != null && manifest.authors.Length != 0)
-					{
-						mods.Add(new(manifest, Mod.Status.SUCCESS, files));
-						Plugin.logger.LogInfo($"Registered mod {manifest.id}");
-					}
-					else
-					{
-						Plugin.logger.LogError("Error when registering mod (manifest invalid)");
-					}
+					mods.Add(new(manifest, Mod.Status.SUCCESS, files));
+					Plugin.logger.LogInfo($"Registered mod {manifest.id}");
+				}
+				else
+				{
+					Plugin.logger.LogError("Error on registering mod");
 				}
 			}
 
@@ -346,7 +350,7 @@ namespace PolyMod
 				}
 			}
 
-			gld.Merge(patch, Plugin.GLD_MERGE_SETTINGS);
+			gld.Merge(patch, new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge });
 		}
 
 		internal static Sprite? GetSprite(string name, string style = "", int level = 0)
