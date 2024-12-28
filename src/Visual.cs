@@ -11,16 +11,16 @@ namespace PolyMod
         private static bool isPolymodScreenActive = false;
 
         [HarmonyPrefix]
-		[HarmonyPatch(typeof(SplashController), nameof(SplashController.LoadAndPlayClip))]
-		private static bool SplashController_LoadAndPlayClip(SplashController __instance)
-		{
+        [HarmonyPatch(typeof(SplashController), nameof(SplashController.LoadAndPlayClip))]
+        private static bool SplashController_LoadAndPlayClip(SplashController __instance)
+        {
             string path = Application.persistentDataPath + "/intro.mp4";
             File.WriteAllBytesAsync(path, Plugin.GetResource("intro.mp4").ReadBytes());
             __instance.lastPlayTime = Time.realtimeSinceStartup;
-			__instance.videoPlayer.url = path;
+            __instance.videoPlayer.url = path;
             __instance.videoPlayer.Play();
             return false;
-		}
+        }
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(StartScreen), nameof(StartScreen.Start))]
@@ -30,7 +30,7 @@ namespace PolyMod
             GameObject button = GameObject.Instantiate(originalButton, originalButton.transform.parent);
             button.active = true;
             button.GetComponentInChildren<TMPLocalizer>().Text = "PolyMod";
-            button.transform.Find("IconContainer").GetComponentInChildren<Image>().sprite 
+            button.transform.Find("IconContainer").GetComponentInChildren<Image>().sprite
                 = SpritesLoader.BuildSprite(Plugin.GetResource("icon.png").ReadBytes(), new Vector2(.5f, .5f));
             UIRoundButton buttonObject = button.GetComponent<UIRoundButton>();
             buttonObject.OnClicked += (UIButtonBase.ButtonAction)OnPolyModButtonClick;
@@ -46,7 +46,7 @@ namespace PolyMod
         [HarmonyPatch(typeof(UIScreenBase), nameof(UIScreenBase.Show))]
         private static void BetaInfoScreen_Show(UIScreenBase __instance, bool instant = false)
         {
-            if(isPolymodScreenActive)
+            if (isPolymodScreenActive)
             {
                 GameObject screenHeader = GameObject.Find("BetaInfoScreen/Header TMP");
                 screenHeader.GetComponent<TMPLocalizer>().Text = "-POLYMOD HUB-";
@@ -66,11 +66,11 @@ namespace PolyMod
                 textButtonObject.GetComponentInChildren<TMPLocalizer>().Text = "OUR DISCORD";
                 string modsText = "";
                 foreach (var mod in ModLoader.mods)
-                for (int i = 0; i < ModLoader.mods.Count; i++)
-                {
+                    for (int i = 0; i < ModLoader.mods.Count; i++)
+                    {
 
-                    modsText += $"Name: {mod.name}\nStatus: {mod.GetPrettyStatus()}\n\n";
-                }
+                        modsText += $"Name: {mod.manifest.id}\nStatus: {mod.GetPrettyStatus()}\n\n";
+                    }
                 parapgraphTwo.GetComponent<TMPLocalizer>().Text = modsText;
                 GameObject headerThree = GameObject.Find("BetaInfoScreen/Scroller/Container/Header TMP (4)");
                 headerThree.active = false;
@@ -96,7 +96,7 @@ namespace PolyMod
         [HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
         private static void GameManager_Update()
         {
-            if(isPolymodScreenActive)
+            if (isPolymodScreenActive)
             {
                 GameObject textButton = GameObject.Find("BetaInfoScreen/Scroller/Container/TextButton");
                 GameObject parapgraphTwo = GameObject.Find("BetaInfoScreen/Scroller/Container/Paragraph TMP (2)");
@@ -108,7 +108,7 @@ namespace PolyMod
         [HarmonyPatch(typeof(BetaInfoScreen), nameof(BetaInfoScreen.OpenDiscordLink))]
         private static bool BetaInfoScreen_OpenDiscordLink()
         {
-            if(isPolymodScreenActive)
+            if (isPolymodScreenActive)
             {
                 NativeHelpers.OpenURL("https://discord.gg/eWPdhWtfVy", false);
                 return false;
@@ -116,7 +116,8 @@ namespace PolyMod
             return true;
         }
 
-        internal static void Init() {
+        internal static void Init()
+        {
             Harmony.CreateAndPatchAll(typeof(Visual));
         }
     }

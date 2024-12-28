@@ -5,10 +5,12 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
 using LibCpp2IL;
 using Newtonsoft.Json.Linq;
+using PolyMod.Json;
 using Polytopia.Data;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
+using System.Text.Json;
 using UnityEngine;
 
 namespace PolyMod
@@ -17,23 +19,19 @@ namespace PolyMod
 	{
 		internal class Mod
 		{
+			internal record Manifest(string id, Version version, string[] authors);
 			internal record File(string name, byte[] bytes);
+			internal enum Status { SUCCESS, ERROR };
 
-			internal string name;
+			internal Manifest manifest;
 			internal Status status;
 			internal List<File> files;
 
-			internal Mod(string name, Status status, List<File> files)
+			internal Mod(Manifest manifest, Status status, List<File> files)
 			{
-				this.name = name;
+				this.manifest = manifest;
 				this.status = status;
 				this.files = files;
-			}
-
-			internal enum Status
-			{
-				SUCCESS,
-				ERROR,
 			}
 
 			internal string GetPrettyStatus()
@@ -47,8 +45,8 @@ namespace PolyMod
 			}
 		}
 
-		private static int _autoidx = Plugin.AUTOIDX_STARTS_FROM;
-		private static Stopwatch _stopwatch = new();
+		private static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
+		private static readonly Stopwatch stopwatch = new();
 		public static Dictionary<string, Sprite> sprites = new();
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
@@ -105,32 +103,63 @@ namespace PolyMod
 
 		internal static void Init()
 		{
-			_stopwatch.Start();
+			stopwatch.Start();
 			Harmony.CreateAndPatchAll(typeof(ModLoader));
 
 			Directory.CreateDirectory(Plugin.MODS_PATH);
-			string[] archives = Directory.GetFiles(Plugin.MODS_PATH, "*.polymod").Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polytale")).Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip")).ToArray();
-			string[] folders = Directory.GetDirectories(Plugin.MODS_PATH);
+			string[] modFiles = Directory.GetDirectories(Plugin.MODS_PATH)
+				.Union(Directory.GetFiles(Plugin.MODS_PATH, "*.polymod"))
+				.Union(Directory.GetFiles(Plugin.MODS_PATH, "*.zip"))
+				.ToArray();
+			foreach (var modFile in modFiles)
+			{
+				Mod.Manifest? manifest = null;
+				List<Mod.File> files = new();
 
-			foreach (string archive in archives)
-			{
-				ZipArchive zipArchive = new(File.OpenRead(archive));
-				List<Mod.File> files = new();
-				foreach (var entry in zipArchive.Entries)
+				if (Directory.Exists(modFile))
 				{
-					files.Add(new(entry.ToString(), entry.ReadBytes()));
+					foreach (var file in Directory.GetFiles(modFile))
+					{
+						if (Path.GetFileName(file) == "manifest.json")
+						{
+							manifest = JsonSerializer.Deserialize<Mod.Manifest>(
+								File.ReadAllBytes(file),
+								new JsonSerializerOptions()
+								{
+									Converters = { new VersionJson() },
+
+								}
+							);
+							continue;
+						}
+						files.Add(new(Path.GetFileName(file), File.ReadAllBytes(file)));
+					}
 				}
-				mods.Add(new(Path.GetFileNameWithoutExtension(archive), Mod.Status.SUCCESS, files));
-			}
-			foreach (var folder in folders)
-			{
-				List<Mod.File> files = new();
-				foreach (var file in Directory.GetFiles(folder))
+				else
 				{
-					var entry = File.OpenRead(file);
-					files.Add(new(file.ToString(), entry.ReadBytes()));
+					foreach (var entry in new ZipArchive(File.OpenRead(modFile)).Entries)
+					{
+						if (entry.FullName == "manifest.json")
+						{
+							manifest = JsonSerializer.Deserialize<Mod.Manifest>(entry.ReadBytes());
+							continue;
+						}
+						files.Add(new(entry.FullName, entry.ReadBytes()));
+					}
 				}
-				mods.Add(new(Path.GetFileNameWithoutExtension(folder), Mod.Status.SUCCESS, files));
+
+				if (manifest != null)
+				{
+					if (manifest.id != null && manifest.version != null && manifest.authors != null && manifest.authors.Length != 0)
+					{
+						mods.Add(new(manifest, Mod.Status.SUCCESS, files));
+						Plugin.logger.LogInfo($"Registered mod {manifest.id}");
+					}
+					else
+					{
+						Plugin.logger.LogError("Error when registering mod (manifest invalid)");
+					}
+				}
 			}
 
 			foreach (var mod in mods)
@@ -145,14 +174,14 @@ namespace PolyMod
 							foreach (Type type in assembly.GetTypes())
 							{
 								type.GetMethod("Load")?.Invoke(null, null);
-								Plugin.logger.LogInfo($"Invoking Load method from {assembly.GetName().Name} assembly from {mod.name} mod");
+								Plugin.logger.LogInfo($"Invoking Load method from {assembly.GetName().Name} assembly from {mod.manifest.id} mod");
 							}
 						}
 						catch (TargetInvocationException exception)
 						{
 							if (exception.InnerException != null)
 							{
-								Plugin.logger.LogInfo($"Error on loading assembly from {mod.name} mod: {exception.InnerException.Message}");
+								Plugin.logger.LogInfo($"Error on loading assembly from {mod.manifest.id} mod: {exception.InnerException.Message}");
 								mod.status = Mod.Status.ERROR;
 							}
 						}
@@ -160,12 +189,12 @@ namespace PolyMod
 				}
 			}
 
-			_stopwatch.Stop();
+			stopwatch.Stop();
 		}
 
 		internal static void Load(JObject gameLogicdata)
 		{
-			_stopwatch.Start();
+			stopwatch.Start();
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
 
 			foreach (var mod in mods)
@@ -177,11 +206,11 @@ namespace PolyMod
 						try
 						{
 							GameLogicDataPatch(gameLogicdata, JObject.Parse(new StreamReader(new MemoryStream(file.bytes)).ReadToEnd()));
-							Plugin.logger.LogInfo($"Registried patch from {mod.name} mod");
+							Plugin.logger.LogInfo($"Registried patch from {mod.manifest.id} mod");
 						}
 						catch (Exception e)
 						{
-							Plugin.logger.LogInfo($"Error on loading patch from {mod.name} mod: {e.Message}");
+							Plugin.logger.LogInfo($"Error on loading patch from {mod.manifest.id} mod: {e.Message}");
 							mod.status = Mod.Status.ERROR;
 						}
 					}
@@ -202,8 +231,8 @@ namespace PolyMod
 
 			gldDictionaryInversed = gldDictionary.ToDictionary((i) => i.Value, (i) => i.Key);
 			shouldInitializeSprites = false;
-			_stopwatch.Stop();
-			Plugin.logger.LogInfo($"Loaded all mods in {_stopwatch.ElapsedMilliseconds}ms");
+			stopwatch.Stop();
+			Plugin.logger.LogInfo($"Loaded all mods in {stopwatch.ElapsedMilliseconds}ms");
 		}
 
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
@@ -249,11 +278,11 @@ namespace PolyMod
 
 						if (!Enum.TryParse<SkinType>(skinValue, out _))
 						{
-							EnumCache<SkinType>.AddMapping(skinValue, (SkinType)_autoidx);
-							skinsToReplace[skinValue] = _autoidx;
-							gldDictionary[skinValue] = _autoidx;
-							Plugin.logger.LogInfo("Created mapping for skin with id " + skinValue + " and index " + _autoidx);
-							_autoidx++;
+							EnumCache<SkinType>.AddMapping(skinValue, (SkinType)autoidx);
+							skinsToReplace[skinValue] = autoidx;
+							gldDictionary[skinValue] = autoidx;
+							Plugin.logger.LogInfo("Created mapping for skin with id " + skinValue + " and index " + autoidx);
+							autoidx++;
 						}
 					}
 
@@ -276,38 +305,38 @@ namespace PolyMod
 				{
 					string id = GetJTokenName(token);
 					string dataType = GetJTokenName(token, 2);
-					token["idx"] = _autoidx;
-					gldDictionary[id] = _autoidx;
+					token["idx"] = autoidx;
+					gldDictionary[id] = autoidx;
 					switch (dataType)
 					{
 						case "tribeData":
-							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)_autoidx);
-							climateToTribeData[climateAutoidx++] = _autoidx;
+							EnumCache<TribeData.Type>.AddMapping(id, (TribeData.Type)autoidx);
+							climateToTribeData[climateAutoidx++] = autoidx;
 							break;
 						case "techData":
-							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)_autoidx);
+							EnumCache<TechData.Type>.AddMapping(id, (TechData.Type)autoidx);
 							break;
 						case "unitData":
-							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)_autoidx);
-							PrefabManager.units.TryAdd((int)(UnitData.Type)_autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
+							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)autoidx);
+							PrefabManager.units.TryAdd((int)(UnitData.Type)autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
 							break;
 						case "improvementData":
-							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)_autoidx);
-							PrefabManager.improvements.TryAdd((ImprovementData.Type)_autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)autoidx);
+							PrefabManager.improvements.TryAdd((ImprovementData.Type)autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
 							break;
 						case "terrainData":
-							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)_autoidx);
+							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)autoidx);
 							break;
 						case "resourceData":
-							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)_autoidx);
-							PrefabManager.resources.TryAdd((ResourceData.Type)_autoidx, PrefabManager.resources[ResourceData.Type.Game]);
+							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)autoidx);
+							PrefabManager.resources.TryAdd((ResourceData.Type)autoidx, PrefabManager.resources[ResourceData.Type.Game]);
 							break;
 						case "taskData":
-							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)_autoidx);
+							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)autoidx);
 							break;
 					}
-					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + "and index " + _autoidx);
-					_autoidx++;
+					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + "and index " + autoidx);
+					autoidx++;
 				}
 			}
 
