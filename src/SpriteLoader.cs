@@ -196,29 +196,19 @@ namespace PolyMod
 			// }
 		}
 
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(MeshCache), nameof(MeshCache.GetOrCreateMaterialPropertyBlock))]
-		private static bool MeshCache_GetOrCreateMaterialPropertyBlock(ref MaterialPropertyBlock __result, MeshCache __instance, string atlasName)
+        [HarmonyPostfix]
+		[HarmonyPatch(typeof(PolytopiaSpriteRenderer), nameof(PolytopiaSpriteRenderer.ForceUpdateMesh))]
+		private static void PolytopiaSpriteRenderer_ForceUpdateMesh(PolytopiaSpriteRenderer __instance)
 		{
-			MaterialPropertyBlock propertyBlock;
-			propertyBlock = new MaterialPropertyBlock();
-			propertyBlock.SetVector("_Flip", new Vector4(1f, 1f, 0f, 0f));
-			if (string.IsNullOrEmpty(atlasName))
+			if (__instance.atlasName != null)
 			{
-				propertyBlock.SetTexture("_MainTex", ModLoader.sprites["fruit_minerskagg_"].texture);
-			}
-			else
-			{
-				GameManager.GetSpriteAtlasManager().LoadSpriteAtlasTexture(atlasName, (Il2CppSystem.Action<UnityEngine.Texture2D>)getAtlasTex);
-			}
-			__result = propertyBlock;
-			return false;
-
-			void getAtlasTex(Texture2D texture)
-			{
-				if(texture != null)
+				if (string.IsNullOrEmpty(__instance.atlasName))
 				{
-					propertyBlock.SetTexture("_MainTex", texture);
+					MaterialPropertyBlock materialPropertyBlock;
+					materialPropertyBlock = new MaterialPropertyBlock();
+					materialPropertyBlock.SetVector("_Flip", new Vector4(1f, 1f, 0f, 0f));
+					materialPropertyBlock.SetTexture("_MainTex", __instance.sprite.texture);
+					__instance.meshRenderer.SetPropertyBlock(materialPropertyBlock);
 				}
 			}
 		}
