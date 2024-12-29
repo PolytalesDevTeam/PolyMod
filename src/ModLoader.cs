@@ -188,15 +188,10 @@ namespace PolyMod
 
 			foreach (var dependency in dependencies)
 			{
+				string? message = null;
 				if (!mods.ContainsKey(dependency.id))
 				{
-					string message = $"Dependency {dependency.id} not found";
-					if (dependency.required)
-					{
-						Plugin.logger.LogFatal(message);
-						Environment.Exit(-1);
-					}
-					Plugin.logger.LogWarning(message);
+					message = $"Dependency {dependency.id} not found";
 				}
 				Version version = mods[dependency.id].version;
 				if (
@@ -205,7 +200,10 @@ namespace PolyMod
 					(dependency.max != null && version > dependency.max)
 				)
 				{
-					string message = $"Need dependency {dependency.id} version {dependency.min} - {dependency.max} found {version}";
+					message = $"Need dependency {dependency.id} version {dependency.min} - {dependency.max} found {version}";
+				}
+				if (message != null) 
+				{
 					if (dependency.required)
 					{
 						Plugin.logger.LogFatal(message);
