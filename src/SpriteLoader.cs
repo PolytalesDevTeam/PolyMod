@@ -78,28 +78,64 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Resource), nameof(Resource.SetVisible))]
 		private static void Resource_SetVisible(Resource __instance)
 		{
-			string tribe;
-			//__result = ModLoader.sprites["fruit_minerskagg_"];
-			try
+			Sprite? sprite = GetSpriteForTerrainOrResource(__instance.tile.data, EnumCache<ResourceData.Type>.GetName(__instance.data.type).ToLower());
+			if(sprite != null)
 			{
-				if(ModLoader.gldDictionaryInversed.ContainsKey(ModLoader.climateToTribeData[__instance.tile.data.climate]))
+				__instance.Sprite = sprite;
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TerrainRenderer), nameof(TerrainRenderer.UpdateGraphics))]
+		private static void TerrainRenderer_UpdateGraphics(TerrainRenderer __instance, Tile tile)
+		{
+			string? terrainName = null;
+			if(tile.data.terrain == Polytopia.Data.TerrainData.Type.Forest || tile.data.terrain == Polytopia.Data.TerrainData.Type.Mountain)
+			{
+				terrainName = "field";
+			}
+			Sprite? sprite = GetSpriteForTerrainOrResource(tile.data, terrainName);
+			if(sprite != null)
+			{
+				__instance.spriteRenderer.Sprite  = sprite;
+			}
+		}
+
+        [HarmonyPostfix]
+		[HarmonyPatch(typeof(PolytopiaSpriteRenderer), nameof(PolytopiaSpriteRenderer.ForceUpdateMesh))]
+		private static void PolytopiaSpriteRenderer_ForceUpdateMesh(PolytopiaSpriteRenderer __instance)
+		{
+			Transform terrainTranform = __instance.transform.parent;
+			if (terrainTranform != null)
+			{
+				Transform tileTransform = terrainTranform.parent;
+				if (tileTransform != null)
 				{
-					tribe = ModLoader.gldDictionaryInversed[ModLoader.climateToTribeData[__instance.tile.data.climate]];
-				}
-				else
-				{
-					tribe = ((TribeData.Type)__instance.tile.data.climate).ToString();
-				}
-				Sprite? sprite = ModLoader.GetSprite(
-						EnumCache<ResourceData.Type>.GetName(__instance.data.type).ToLower(), 
-						tribe
-					);
-				if(sprite != null)
-				{
-					__instance.Sprite = sprite;
+					Tile tile = tileTransform.GetComponent<Tile>();
+					if (tile != null)
+					{
+						if(__instance.sprite.name.Contains("Forest") || __instance.sprite.name.Contains("Mountain") || __instance.sprite.name.Contains("forest") || __instance.sprite.name.Contains("mountain"))
+						{
+							Sprite? sprite = GetSpriteForTerrainOrResource(tile.data);
+							if(sprite != null)
+							{
+								__instance.Sprite = sprite;
+							}
+						}
+					}
 				}
 			}
-			catch{}
+			if (__instance.atlasName != null)
+			{
+				if (string.IsNullOrEmpty(__instance.atlasName))
+				{
+					MaterialPropertyBlock materialPropertyBlock;
+					materialPropertyBlock = new MaterialPropertyBlock();
+					materialPropertyBlock.SetVector("_Flip", new Vector4(1f, 1f, 0f, 0f));
+					materialPropertyBlock.SetTexture("_MainTex", __instance.sprite.texture);
+					__instance.meshRenderer.SetPropertyBlock(materialPropertyBlock);
+				}
+			}
 		}
 
 		[HarmonyPostfix]
@@ -196,21 +232,31 @@ namespace PolyMod
 			// }
 		}
 
-        [HarmonyPostfix]
-		[HarmonyPatch(typeof(PolytopiaSpriteRenderer), nameof(PolytopiaSpriteRenderer.ForceUpdateMesh))]
-		private static void PolytopiaSpriteRenderer_ForceUpdateMesh(PolytopiaSpriteRenderer __instance)
+		public static Sprite? GetSpriteForTerrainOrResource(TileData tileData, string? name = null)
 		{
-			if (__instance.atlasName != null)
+			string tribe;
+			if(name == null)
 			{
-				if (string.IsNullOrEmpty(__instance.atlasName))
-				{
-					MaterialPropertyBlock materialPropertyBlock;
-					materialPropertyBlock = new MaterialPropertyBlock();
-					materialPropertyBlock.SetVector("_Flip", new Vector4(1f, 1f, 0f, 0f));
-					materialPropertyBlock.SetTexture("_MainTex", __instance.sprite.texture);
-					__instance.meshRenderer.SetPropertyBlock(materialPropertyBlock);
-				}
+				name = EnumCache<Polytopia.Data.TerrainData.Type>.GetName(tileData.terrain).ToLower();
 			}
+			try
+			{
+				if(ModLoader.gldDictionaryInversed.ContainsKey(ModLoader.climateToTribeData[tileData.climate]))
+				{
+					tribe = ModLoader.gldDictionaryInversed[ModLoader.climateToTribeData[tileData.climate]];
+				}
+				else
+				{
+					tribe = ((TribeData.Type)tileData.climate).ToString();
+				}
+				Sprite? sprite = ModLoader.GetSprite(
+					name,
+					tribe
+				);
+				return sprite;
+			}
+			catch{}
+			return null;
 		}
 
 		public static Sprite BuildSprite(byte[] data, Vector2 pivot)
