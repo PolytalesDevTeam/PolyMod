@@ -128,7 +128,6 @@ namespace PolyMod
 								new JsonSerializerOptions()
 								{
 									Converters = { new VersionJson() },
-
 								}
 							);
 							continue;
@@ -142,7 +141,13 @@ namespace PolyMod
 					{
 						if (entry.FullName == "manifest.json")
 						{
-							manifest = JsonSerializer.Deserialize<Mod.Manifest>(entry.ReadBytes());
+							manifest = JsonSerializer.Deserialize<Mod.Manifest>(
+								entry.ReadBytes(),
+								new JsonSerializerOptions()
+								{
+									Converters = { new VersionJson() },
+								}
+							);
 							continue;
 						}
 						files.Add(new(entry.FullName, entry.ReadBytes()));
