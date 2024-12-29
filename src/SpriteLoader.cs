@@ -78,27 +78,30 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Resource), nameof(Resource.SetVisible))]
 		private static void Resource_SetVisible(Resource __instance)
 		{
-			Sprite? sprite = GetSpriteForTerrainOrResource(__instance.tile.data, EnumCache<ResourceData.Type>.GetName(__instance.data.type).ToLower());
-			if(sprite != null)
-			{
-				__instance.Sprite = sprite;
-			}
+			__instance.Sprite = GetSpriteForTile(__instance.Sprite, __instance.tile, EnumCache<Polytopia.Data.ResourceData.Type>.GetName(__instance.tile.data.resource.type).ToLower());
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(Building), nameof(Building.SetVisible))]
+		private static void Building_SetVisible(Building __instance, bool value)
+		{
+			__instance.Sprite = GetSpriteForTile(__instance.Sprite, __instance.tile, EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(__instance.tile.improvement.data.type).ToLower(), __instance.tile.improvement.Level);
 		}
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TerrainRenderer), nameof(TerrainRenderer.UpdateGraphics))]
 		private static void TerrainRenderer_UpdateGraphics(TerrainRenderer __instance, Tile tile)
 		{
-			string? terrainName = null;
+			string? name;
 			if(tile.data.terrain == Polytopia.Data.TerrainData.Type.Forest || tile.data.terrain == Polytopia.Data.TerrainData.Type.Mountain)
 			{
-				terrainName = "field";
+				name = "field";
 			}
-			Sprite? sprite = GetSpriteForTerrainOrResource(tile.data, terrainName);
-			if(sprite != null)
+			else
 			{
-				__instance.spriteRenderer.Sprite  = sprite;
+				name = EnumCache<Polytopia.Data.TerrainData.Type>.GetName(tile.data.terrain).ToLower();
 			}
+			__instance.spriteRenderer.Sprite = GetSpriteForTile(__instance.spriteRenderer.Sprite, tile, name);
 		}
 
         [HarmonyPostfix]
@@ -116,15 +119,12 @@ namespace PolyMod
 					{
 						if(__instance.sprite.name.Contains("Forest") || __instance.sprite.name.Contains("Mountain") || __instance.sprite.name.Contains("forest") || __instance.sprite.name.Contains("mountain"))
 						{
-							Sprite? sprite = GetSpriteForTerrainOrResource(tile.data);
-							if(sprite != null)
-							{
-								__instance.Sprite = sprite;
-							}
+							__instance.Sprite = GetSpriteForTile(__instance.Sprite, tile, EnumCache<Polytopia.Data.TerrainData.Type>.GetName(tile.data.terrain).ToLower());
 						}
 					}
 				}
 			}
+
 			if (__instance.atlasName != null)
 			{
 				if (string.IsNullOrEmpty(__instance.atlasName))
@@ -232,31 +232,23 @@ namespace PolyMod
 			// }
 		}
 
-		public static Sprite? GetSpriteForTerrainOrResource(TileData tileData, string? name = null)
+		private static Sprite? GetSpriteForTile(Sprite? sprite, Tile tile, string name, int level = 0)
 		{
-			string tribe;
-			if(name == null)
-			{
-				name = EnumCache<Polytopia.Data.TerrainData.Type>.GetName(tileData.terrain).ToLower();
-			}
 			try
 			{
-				if(ModLoader.gldDictionaryInversed.ContainsKey(ModLoader.climateToTribeData[tileData.climate]))
+				string tribe = EnumCache<Polytopia.Data.TribeData.Type>
+					.GetName(GameManager.GameState.GameLogicData.GetTribeTypeFromStyle(tile.data.climate))
+					.ToLower();
+
+				Sprite? newSprite = ModLoader.GetSprite(name, tribe, level);
+				if(newSprite != null)
 				{
-					tribe = ModLoader.gldDictionaryInversed[ModLoader.climateToTribeData[tileData.climate]];
+					sprite = newSprite;
 				}
-				else
-				{
-					tribe = ((TribeData.Type)tileData.climate).ToString();
-				}
-				Sprite? sprite = ModLoader.GetSprite(
-					name,
-					tribe
-				);
-				return sprite;
 			}
-			catch{}
-			return null;
+			catch
+			{}
+			return sprite;
 		}
 
 		public static Sprite BuildSprite(byte[] data, Vector2 pivot)
