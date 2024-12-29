@@ -20,7 +20,8 @@ namespace PolyMod
 	{
 		internal class Mod
 		{
-			internal record Manifest(string id, Version version, string[] authors);
+			internal record Dependency(string id, Version min, Version max, bool required = true);
+			internal record Manifest(string id, Version version, string[] authors, Dependency[] dependencies);
 			internal record File(string name, byte[] bytes);
 			internal enum Status { SUCCESS, ERROR };
 
@@ -54,6 +55,7 @@ namespace PolyMod
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static Dictionary<string, Mod> mods = new();
+		public static List<Mod.Dependency> dependencies = new();
 		public static Dictionary<int, int> climateToTribeData = new();
 		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static bool shouldInitializeSprites = true;
@@ -169,6 +171,7 @@ namespace PolyMod
 						Plugin.logger.LogError($"Mod {manifest.id} already exists");
 						continue;
 					}
+					if (manifest.dependencies != null) dependencies.AddRange(manifest.dependencies);
 					mods.Add(manifest.id, new(
 						manifest.version,
 						manifest.authors,
@@ -180,6 +183,35 @@ namespace PolyMod
 				else
 				{
 					Plugin.logger.LogError("Error on registering mod");
+				}
+			}
+
+			foreach (var dependency in dependencies)
+			{
+				if (!mods.ContainsKey(dependency.id))
+				{
+					string message = $"Dependency {dependency.id} not found";
+					if (dependency.required)
+					{
+						Plugin.logger.LogFatal(message);
+						Environment.Exit(-1);
+					}
+					Plugin.logger.LogWarning(message);
+				}
+				Version version = mods[dependency.id].version;
+				if (
+					(dependency.min != null && version < dependency.min) 
+					||
+					(dependency.max != null && version > dependency.max)
+				)
+				{
+					string message = $"Need dependency {dependency.id} version {dependency.min} - {dependency.max} found {version}";
+					if (dependency.required)
+					{
+						Plugin.logger.LogFatal(message);
+						Environment.Exit(-1);
+					}
+					Plugin.logger.LogWarning(message);
 				}
 			}
 
