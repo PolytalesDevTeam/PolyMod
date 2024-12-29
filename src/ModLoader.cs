@@ -289,7 +289,7 @@ namespace PolyMod
 							EnumCache<SkinType>.AddMapping(skinValue, (SkinType)autoidx);
 							skinsToReplace[skinValue] = autoidx;
 							gldDictionary[skinValue] = autoidx;
-							Plugin.logger.LogInfo("Created mapping for skin with id " + skinValue + " and index " + autoidx);
+							Plugin.logger.LogInfo("Created mapping for skinType with id " + skinValue + " and index " + autoidx);
 							autoidx++;
 						}
 					}
@@ -349,7 +349,7 @@ namespace PolyMod
 							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)autoidx);
 							break;
 					}
-					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + "and index " + autoidx);
+					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + " and index " + autoidx);
 					autoidx++;
 				}
 			}
