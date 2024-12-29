@@ -65,12 +65,8 @@ namespace PolyMod
                 GameObject textButtonObject = GameObject.Find("BetaInfoScreen/Scroller/Container/TextButton");
                 textButtonObject.GetComponentInChildren<TMPLocalizer>().Text = "OUR DISCORD";
                 string modsText = "";
-                foreach (var mod in ModLoader.mods)
-                    for (int i = 0; i < ModLoader.mods.Count; i++)
-                    {
-
-                        modsText += $"Name: {mod.manifest.id}\nStatus: {mod.GetPrettyStatus()}\n\n";
-                    }
+                foreach (var (id, mod) in ModLoader.mods)
+                    modsText += $"ID: {id}\nStatus: {mod.GetPrettyStatus()}\n\n";
                 parapgraphTwo.GetComponent<TMPLocalizer>().Text = modsText;
                 GameObject headerThree = GameObject.Find("BetaInfoScreen/Scroller/Container/Header TMP (4)");
                 headerThree.active = false;

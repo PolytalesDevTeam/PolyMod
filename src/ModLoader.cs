@@ -24,13 +24,15 @@ namespace PolyMod
 			internal record File(string name, byte[] bytes);
 			internal enum Status { SUCCESS, ERROR };
 
-			internal Manifest manifest;
+			internal Version version;
+			internal string[] authors;
 			internal Status status;
 			internal List<File> files;
 
-			internal Mod(Manifest manifest, Status status, List<File> files)
+			internal Mod(Version version, string[] authors, Status status, List<File> files)
 			{
-				this.manifest = manifest;
+				this.version = version;
+				this.authors = authors;
 				this.status = status;
 				this.files = files;
 			}
@@ -51,7 +53,7 @@ namespace PolyMod
 		public static Dictionary<string, Sprite> sprites = new();
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
-		public static List<Mod> mods = new();
+		public static Dictionary<string, Mod> mods = new();
 		public static Dictionary<int, int> climateToTribeData = new();
 		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static bool shouldInitializeSprites = true;
@@ -162,7 +164,17 @@ namespace PolyMod
 					&& manifest.authors.Length != 0
 				)
 				{
-					mods.Add(new(manifest, Mod.Status.SUCCESS, files));
+					if (mods.ContainsKey(manifest.id))
+					{
+						Plugin.logger.LogError($"Mod {manifest.id} already exists");
+						continue;
+					}
+					mods.Add(manifest.id, new(
+						manifest.version,
+						manifest.authors,
+						Mod.Status.SUCCESS,
+						files
+					));
 					Plugin.logger.LogInfo($"Registered mod {manifest.id}");
 				}
 				else
@@ -171,7 +183,7 @@ namespace PolyMod
 				}
 			}
 
-			foreach (var mod in mods)
+			foreach (var (id, mod) in mods)
 			{
 				foreach (var file in mod.files)
 				{
@@ -186,7 +198,7 @@ namespace PolyMod
 								if (method != null)
 								{
 									method.Invoke(null, null);
-									Plugin.logger.LogInfo($"Invoked Load method from {assembly.GetName().Name} assembly from {mod.manifest.id} mod");
+									Plugin.logger.LogInfo($"Invoked Load method from {assembly.GetName().Name} assembly from {id} mod");
 								}
 							}
 						}
@@ -194,7 +206,7 @@ namespace PolyMod
 						{
 							if (exception.InnerException != null)
 							{
-								Plugin.logger.LogInfo($"Error on loading assembly from {mod.manifest.id} mod: {exception.InnerException.Message}");
+								Plugin.logger.LogInfo($"Error on loading assembly from {id} mod: {exception.InnerException.Message}");
 								mod.status = Mod.Status.ERROR;
 							}
 						}
@@ -210,7 +222,7 @@ namespace PolyMod
 			stopwatch.Start();
 			GameManager.GetSpriteAtlasManager().cachedSprites.TryAdd("Heads", new());
 
-			foreach (var mod in mods)
+			foreach (var (id, mod) in mods)
 			{
 				foreach (var file in mod.files)
 				{
@@ -219,11 +231,11 @@ namespace PolyMod
 						try
 						{
 							GameLogicDataPatch(gameLogicdata, JObject.Parse(new StreamReader(new MemoryStream(file.bytes)).ReadToEnd()));
-							Plugin.logger.LogInfo($"Registried patch from {mod.manifest.id} mod");
+							Plugin.logger.LogInfo($"Registried patch from {id} mod");
 						}
 						catch (Exception e)
 						{
-							Plugin.logger.LogInfo($"Error on loading patch from {mod.manifest.id} mod: {e.Message}");
+							Plugin.logger.LogInfo($"Error on loading patch from {id} mod: {e.Message}");
 							mod.status = Mod.Status.ERROR;
 						}
 					}
