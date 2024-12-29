@@ -49,22 +49,23 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Unit), nameof(Unit.SetVisible))]
 		private static void Unit_SetVisible(Unit __instance)
 		{
-			string tribe;
 			try
 			{
-				if(ModLoader.gldDictionaryInversed.ContainsKey((int)__instance.Owner.skinType))
+				string name;
+				string skin = EnumCache<Polytopia.Data.SkinType>
+					.GetName(__instance.Owner.skinType)
+					.ToLower();
+				if(skin != "default")
 				{
-					tribe = ModLoader.gldDictionaryInversed[(int)__instance.Owner.skinType];
+					name = skin;
 				}
-				else if(ModLoader.gldDictionaryInversed.ContainsKey((int)__instance.Owner.tribe))
+				else
 				{
-					tribe = ModLoader.gldDictionaryInversed[(int)__instance.Owner.tribe];
+					name = EnumCache<Polytopia.Data.TribeData.Type>
+					.GetName(__instance.Owner.tribe)
+					.ToLower();
 				}
-				else //TODO: add a check if there is a sprite for a skin
-				{
-					tribe = __instance.Owner.tribe.ToString();
-				}
-				Sprite? sprite = ModLoader.GetSprite("head", tribe);
+				Sprite? sprite = ModLoader.GetSprite("head", name);
 				if(sprite != null)
 				{
 					__instance.transform.FindChild("SpriteContainer/Head")
@@ -232,7 +233,7 @@ namespace PolyMod
 			// }
 		}
 
-		private static Sprite? GetSpriteForTile(Sprite? sprite, Tile tile, string name, int level = 0)
+		private static Sprite GetSpriteForTile(Sprite sprite, Tile tile, string name, int level = 0)
 		{
 			try
 			{
