@@ -177,8 +177,12 @@ namespace PolyMod
 							Assembly assembly = Assembly.Load(file.bytes);
 							foreach (Type type in assembly.GetTypes())
 							{
-								type.GetMethod("Load")?.Invoke(null, null);
-								Plugin.logger.LogInfo($"Invoking Load method from {assembly.GetName().Name} assembly from {mod.manifest.id} mod");
+								MethodInfo? method = type.GetMethod("Load");
+								if (method != null)
+								{
+									method.Invoke(null, null);
+									Plugin.logger.LogInfo($"Invoked Load method from {assembly.GetName().Name} assembly from {mod.manifest.id} mod");
+								}
 							}
 						}
 						catch (TargetInvocationException exception)
