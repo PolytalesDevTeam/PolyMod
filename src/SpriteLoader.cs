@@ -353,23 +353,19 @@ namespace PolyMod
 		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetImprovementSprite), new Type[] { typeof(ImprovementData.Type), typeof(TribeData.Type), typeof(SkinType), typeof(SpriteAtlasManager)})]
 		private static void GetImprovementSprite(ref Sprite __result, ImprovementData.Type improvement, TribeData.Type tribe, SkinType skin, SpriteAtlasManager atlasManager)
 		{
-			Console.Write(EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(improvement).ToLower());
-			if(__result == null || __result.name == "placeholder")
+			string style;
+			if(skin != SkinType.Default)
 			{
-				string style;
-				if(skin != SkinType.Default)
-				{
-					style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
-				}
-				else
-				{
-					style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
-				}
-				Sprite? sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(improvement).ToLower(), style);
-				if(sprite != null)
-				{
-					__result = sprite;
-				}
+				style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
+			}
+			else
+			{
+				style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
+			}
+			Sprite? sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(improvement).ToLower(), style);
+			if(sprite != null)
+			{
+				__result = sprite;
 			}
 		}
 
