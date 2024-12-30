@@ -9,41 +9,9 @@ namespace PolyMod
 	public class SpritesLoader
 	{
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
-		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
-		private static void TechItem_SetupComplete()
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(UICityPlot), nameof(UICityPlot.AddHouse))]
-		private static void UICityPlot_AddHouse()
-		{
-		}
-
-		[HarmonyPostfix]
 		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.LateUpdate))]
 		private static void MapRenderer_LateUpdate()
 		{
-		}
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(City), nameof(City.UpdateObject))]
-		private static void City_UpdateObject(City __instance)
-		{
-			if (__instance.state.name != null)
-			{
-				if ((int)__instance.Owner.tribe > 17)
-				{
-					__instance.cityRenderer.Tribe = TribeData.Type.Imperius;
-					__instance.cityRenderer.SkinType = SkinType.Default;
-					__instance.cityRenderer.RefreshCity();
-				}
-			}
 		}
 
 		[HarmonyPostfix]
@@ -264,8 +232,8 @@ namespace PolyMod
 				if(sprite != null)
 				{
 					headImage.sprite = sprite;
+					headImage.gameObject.transform.localScale = new Vector3(1.5f, 1.5f, 0);
 				}
-				headImage.gameObject.transform.localScale = new Vector3(1.5f, 1.5f, 0);
 			}
 		}
 
@@ -366,6 +334,73 @@ namespace PolyMod
 			if(sprite != null)
 			{
 				__result = sprite;
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.GetHouse))]
+		private static void GetHouse(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, TribeData.Type tribe, int type, SkinType skinType)
+		{
+			PolytopiaSpriteRenderer polytopiaSpriteRenderer = __result;
+
+			if(type != __instance.HOUSE_WORKSHOP && type != __instance.HOUSE_PARK)
+			{
+				string style;
+				if(skinType != SkinType.Default)
+				{
+					style = EnumCache<Polytopia.Data.SkinType>.GetName(skinType).ToLower();
+				}
+				else
+				{
+					style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
+				}
+				Sprite? sprite = ModLoader.GetSprite("house", style, type);
+				if (sprite != null)
+				{
+					polytopiaSpriteRenderer.Sprite = sprite;
+					TerrainMaterialHelper.SetSpriteSaturated(polytopiaSpriteRenderer, __instance.IsEnemyCity);
+					__result = polytopiaSpriteRenderer;
+				}
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UICityRenderer), nameof(UICityRenderer.GetResource))]
+		private static void UICityRenderer_GetResource(ref GameObject __result, string baseName, Polytopia.Data.TribeData.Type tribe, Polytopia.Data.SkinType skin)
+		{
+			GameObject resourceObject = __result;
+			Image imageComponent = resourceObject.GetComponent<Image>();
+			string[] tokens = baseName.Split('_');
+			if(tokens.Length > 0)
+			{
+				if(tokens[0] == "House")
+				{
+					int level = 0;
+					if(tokens.Length > 1)
+					{
+						int.TryParse(tokens[1], out level);
+					}
+
+					string style;
+					if(skin != SkinType.Default)
+					{
+						style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
+					}
+					else
+					{
+						style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
+					}
+
+					Sprite? sprite = ModLoader.GetSprite("house", style, level);
+					if(sprite == null)
+					{
+						return;
+					}
+					imageComponent.sprite = sprite;
+					imageComponent.SetNativeSize();
+
+					__result = resourceObject;
+				}
 			}
 		}
 
