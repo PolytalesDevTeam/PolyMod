@@ -14,8 +14,9 @@ namespace PolyMod
         [HarmonyPatch(typeof(SplashController), nameof(SplashController.LoadAndPlayClip))]
         private static bool SplashController_LoadAndPlayClip(SplashController __instance)
         {
-            string path = Application.persistentDataPath + "/intro.mp4";
-            File.WriteAllBytesAsync(path, Plugin.GetResource("intro.mp4").ReadBytes());
+            string name = "intro.mp4";
+            string path = Path.Combine(Application.persistentDataPath, name);
+            File.WriteAllBytesAsync(path, Plugin.GetResource(name).ReadBytes());
             __instance.lastPlayTime = Time.realtimeSinceStartup;
             __instance.videoPlayer.url = path;
             __instance.videoPlayer.Play();
