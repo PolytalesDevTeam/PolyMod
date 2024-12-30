@@ -9,8 +9,8 @@ namespace PolyMod
 	public class SpritesLoader
 	{
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.LateUpdate))]
-		private static void MapRenderer_LateUpdate()
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))] // Crash preventive patch
+		private static void TechItem_SetupComplete()
 		{
 		}
 
