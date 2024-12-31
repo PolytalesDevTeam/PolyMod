@@ -150,7 +150,7 @@ namespace PolyMod
 			}
 			GameState gameState = GameManager.GameState;
 			Il2CppSystem.Collections.Generic.List<CommandBase> buildableImprovementsCommands = CommandUtils.GetBuildableImprovements(gameState, player, tile.Data, true);
-			for (int key = 0; key < __instance.quickActions.buttons.Count; ++key)
+			for (int key = 0; key < buildableImprovementsCommands.Count; ++key)
 			{
 				UIRoundButton uiroundButton = __instance.quickActions.buttons[key];
 				BuildCommand buildCommand = buildableImprovementsCommands[key].Cast<BuildCommand>();
@@ -174,7 +174,6 @@ namespace PolyMod
 		[HarmonyPatch(typeof(UIIconData), nameof(UIIconData.GetImage))]
 		private static void UIIconData_GetImage(ref Image __result, UIIconData __instance, string id) // TODO
 		{
-			//Console.Write(id);
 		}
 
 		[HarmonyPostfix]
@@ -293,8 +292,8 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetImprovementSprite), new Type[] { typeof(ImprovementData.Type), typeof(TribeData.Type), typeof(SkinType), typeof(SpriteAtlasManager) })]
-		private static void GetImprovementSprite(ref Sprite __result, ImprovementData.Type improvement, TribeData.Type tribe, SkinType skin, SpriteAtlasManager atlasManager)
+		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetImprovementSprite), new Type[] { typeof(ImprovementData.Type), typeof(TribeData.Type), typeof(SkinType), typeof(SpriteAtlasManager)})]
+		private static void UIUtils_GetImprovementSprite(ref Sprite __result, ImprovementData.Type improvement, TribeData.Type tribe, SkinType skin, SpriteAtlasManager atlasManager)
 		{
 			string style;
 			if (skin != SkinType.Default)
