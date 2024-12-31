@@ -89,8 +89,8 @@ namespace PolyMod
 						if (tile != null)
 						{
 							__instance.Sprite = GetSpriteForTile(
-								__instance.Sprite, 
-								tile, 
+								__instance.Sprite,
+								tile,
 								EnumCache<Polytopia.Data.TerrainData.Type>.GetName(tile.data.terrain)
 							);
 						}
@@ -178,7 +178,7 @@ namespace PolyMod
 				foreach (var enumValue in Enum.GetValues<ResourceData.Type>())
 				{
 					string resource = EnumCache<Polytopia.Data.ResourceData.Type>.GetName((ResourceData.Type)enumValue).ToLower();
-					if(tile.Resource.sprite.name.Contains(resource))
+					if (tile.Resource.sprite.name.Contains(resource))
 					{
 						resourceType = resource;
 						break;
@@ -207,14 +207,14 @@ namespace PolyMod
 				return;
 			}
 			GameState gameState = GameManager.GameState;
-			Il2CppSystem.Collections.Generic.List<CommandBase> buildableImprovementsCommands 
+			Il2CppSystem.Collections.Generic.List<CommandBase> buildableImprovementsCommands
 				= CommandUtils.GetBuildableImprovements(gameState, player, tile.Data, true);
 			for (int key = 0; key < buildableImprovementsCommands.Count; ++key)
 			{
 				UIRoundButton uiroundButton = __instance.quickActions.buttons[key];
 				BuildCommand buildCommand = buildableImprovementsCommands[key].Cast<BuildCommand>();
-                gameState.GameLogicData.TryGetData(buildCommand.Type, out ImprovementData improvementData2);
-                UnitData.Type type = improvementData2.CreatesUnit();
+				gameState.GameLogicData.TryGetData(buildCommand.Type, out ImprovementData improvementData2);
+				UnitData.Type type = improvementData2.CreatesUnit();
 				if (type == UnitData.Type.None && uiroundButton.icon.sprite.name == "placeholder")
 				{
 					try
@@ -292,7 +292,7 @@ namespace PolyMod
 				if (sprite == null)
 				{
 					sprite = ModLoader.GetSprite(
-						"mountain", 
+						"mountain",
 						EnumCache<TribeData.Type>.GetName(tribeTypeFromStyle)
 					);
 					if (sprite == null)
@@ -325,7 +325,7 @@ namespace PolyMod
 			{
 				Image image = UIUtils.GetImage();
 				sprite = ModLoader.GetSprite(
-					EnumCache<Polytopia.Data.TerrainData.Type>.GetName(type), 
+					EnumCache<Polytopia.Data.TerrainData.Type>.GetName(type),
 					EnumCache<TribeData.Type>.GetName(tribeTypeFromStyle)
 				);
 				if (sprite != null)
@@ -392,7 +392,7 @@ namespace PolyMod
 					int level = 0;
 					if (tokens.Length > 1)
 					{
-						int.TryParse(tokens[1], out level);
+						_ = int.TryParse(tokens[1], out level);
 					}
 
 					string style;
