@@ -77,7 +77,7 @@ namespace PolyMod
 		private static void PolytopiaSpriteRenderer_ForceUpdateMesh(PolytopiaSpriteRenderer __instance)
 		{
 			string name = __instance.gameObject.name.ToLower();
-			if (name.Contains("forest") || __instance.gameObject.name.Contains("mountain"))
+			if (name.Contains("forest") || name.Contains("mountain"))
 			{
 				Transform? terrainTranform = __instance.transform.parent;
 				if (terrainTranform != null)
