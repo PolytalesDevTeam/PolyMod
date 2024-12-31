@@ -54,6 +54,7 @@ namespace PolyMod
 		private static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static readonly Stopwatch stopwatch = new();
 		public static Dictionary<string, Sprite> sprites = new();
+		public static Dictionary<string, AudioSource> audioClips = new();
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static Dictionary<string, Mod> mods = new();
@@ -91,6 +92,50 @@ namespace PolyMod
 			{
 				climate = 1;
 			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MusicData), nameof(MusicData.GetNatureAudioClip))]
+		private static bool MusicData_GetNatureAudioClip(ref AudioClip __result, TribeData.Type type, SkinType skinType)
+		{
+			AudioClip? audioClip;
+            if (skinType != SkinType.Default)
+			{
+				audioClip = GetAudioClip("nature", EnumCache<SkinType>.GetName(skinType));
+			}
+			else
+			{
+				audioClip = GetAudioClip("nature", EnumCache<TribeData.Type>.GetName(type));
+			}
+			if (audioClip != null)
+			{
+				Console.WriteLine("LMAO! nature");
+				__result = audioClip;
+				return false;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MusicData), nameof(MusicData.GetMusicAudioClip))]
+		private static bool MusicData_GetMusicAudioClip(ref AudioClip __result, TribeData.Type type, SkinType skinType)
+		{
+            AudioClip? audioClip;
+            if (skinType != SkinType.Default)
+			{
+				audioClip = GetAudioClip("music", EnumCache<SkinType>.GetName(skinType));
+			}
+			else
+			{
+				audioClip = GetAudioClip("music", EnumCache<TribeData.Type>.GetName(type));
+			}
+			if (audioClip != null)
+			{
+				Console.WriteLine("LMAO!");
+				__result = audioClip;
+				return false;
+			}
+			return true;
 		}
 
 		[HarmonyPostfix]
@@ -279,6 +324,13 @@ namespace PolyMod
 						GameManager.GetSpriteAtlasManager().cachedSprites["Heads"].Add(Path.GetFileNameWithoutExtension(file.name), sprite);
 						sprites.Add(Path.GetFileNameWithoutExtension(file.name), sprite);
 					}
+					if (Path.GetExtension(file.name) == ".wav")
+					{
+						AudioSource audioSource = new GameObject().AddComponent<AudioSource>();
+						GameObject.DontDestroyOnLoad(audioSource);
+						audioSource.clip = AudioClipLoader.BuildAudioClip(file.bytes);
+						audioClips.Add(Path.GetFileNameWithoutExtension(file.name), audioSource);
+					}
 				}
 			}
 
@@ -412,6 +464,15 @@ namespace PolyMod
 			sprite = sprites.GetOrDefault($"{name}__{level}", sprite);
 			sprite = sprites.GetOrDefault($"{name}_{style}_{level}", sprite);
 			return sprite;
+		}
+
+		internal static AudioClip? GetAudioClip(string name, string style)
+		{
+			AudioSource? audioSource = null;
+			name = name.ToLower();
+			style = style.ToLower();
+			audioSource = audioClips.GetOrDefault($"{name}_{style}", audioSource);
+			return audioSource!.clip;
 		}
 
 		public static string GetJTokenName(JToken token, int n = 1)
