@@ -20,21 +20,21 @@ namespace PolyMod
 		{
 			try
 			{
-				string name;
+				string style;
 				string skin = EnumCache<Polytopia.Data.SkinType>
 					.GetName(__instance.Owner.skinType)
 					.ToLower();
 				if (skin != "default")
 				{
-					name = skin;
+					style = skin;
 				}
 				else
 				{
-					name = EnumCache<Polytopia.Data.TribeData.Type>
+					style = EnumCache<Polytopia.Data.TribeData.Type>
 					.GetName(__instance.Owner.tribe)
 					.ToLower();
 				}
-				Sprite? sprite = ModLoader.GetSprite("head", name);
+				Sprite? sprite = ModLoader.GetSprite("head", style);
 				if (sprite != null)
 				{
 					__instance.transform.FindChild("SpriteContainer/Head")
@@ -130,11 +130,97 @@ namespace PolyMod
 		[HarmonyPatch(typeof(UIWorldPreview), nameof(UIWorldPreview.SetPreview), new Type[] { })]
 		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) // TODO
 		{
-			foreach (var image in GameObject.FindObjectsOfType<UnityEngine.UI.Image>())
+			string style;
+			string skin = EnumCache<Polytopia.Data.SkinType>
+				.GetName(__instance.skinType)
+				.ToLower();
+			if (skin != "default")
 			{
-				if (image.name == "Head")
+				style = skin;
+			}
+			else
+			{
+				style = EnumCache<Polytopia.Data.TribeData.Type>
+				.GetName(__instance.tribeData.type)
+				.ToLower();
+			}
+			foreach (UITile tile in __instance.tiles)
+			{
+				if((tile.Position.x == -1 && tile.Position.y == 3) || (tile.Position.x == 1 && tile.Position.y == 2))
 				{
-					image.Cast<UnityEngine.UI.Image>();
+					tile.Forest.gameObject.SetActive(true);
+					tile.Animal.gameObject.SetActive(true);
+				}
+				else if((tile.Position.x == -1 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 5) || (tile.Position.x == 0 && tile.Position.y == 2))
+				{
+					tile.Mountain.gameObject.SetActive(true);
+				}
+				else if((tile.Position.x == 0 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 0))
+				{
+					tile.Resource.gameObject.SetActive(true);
+				}
+				string terrainType = tile.Tile.sprite.name;
+				if(terrainType == "ground")
+				{
+					terrainType = "field";
+				}
+				Sprite? tileSprite = ModLoader.GetSprite(terrainType, style);
+				if(tileSprite != null)
+				{
+					tile.Tile.sprite = tileSprite;
+				}
+				Sprite? forestSprite = ModLoader.GetSprite("forest", style);
+				if(forestSprite != null)
+				{
+					tile.Forest.sprite = forestSprite;
+				}
+				Sprite? mountainSprite = ModLoader.GetSprite("mountain", style);
+				if(mountainSprite != null)
+				{
+					tile.Mountain.sprite = mountainSprite;
+				}
+				string resourceType = tile.Resource.sprite.name;
+				if(resourceType.Contains("crop"))
+				{
+					resourceType = "crop";
+				}
+				else if(resourceType.Contains("fish"))
+				{
+					resourceType = "fish";
+				}
+				else if(resourceType.Contains("whale"))
+				{
+					resourceType = "whale";
+				}
+				else if(resourceType.Contains("metal"))
+				{
+					resourceType = "metal";
+				}
+				else if(resourceType.Contains("spores"))
+				{
+					resourceType = "spores";
+				}
+				else if(resourceType.Contains("starfish"))
+				{
+					resourceType = "starfish";
+				}
+				else if(resourceType.Contains("aquacrop"))
+				{
+					resourceType = "aquacrop";
+				}
+				else
+				{
+					resourceType = "fruit";
+				}
+				Sprite? resourceSprite  = ModLoader.GetSprite(resourceType, style);
+				if(resourceSprite != null)
+				{
+					tile.Resource.sprite = resourceSprite;
+				}
+				Sprite? animalSprite = ModLoader.GetSprite("game", style);
+				if(animalSprite != null)
+				{
+					tile.Animal.sprite = animalSprite;
 				}
 			}
 		}
