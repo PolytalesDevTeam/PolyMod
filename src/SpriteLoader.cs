@@ -173,6 +173,7 @@ namespace PolyMod
 				if (mountainSprite != null)
 				{
 					tile.Mountain.sprite = mountainSprite;
+					tile.Mountain.transform.localScale = new Vector3(1f, 0.7f, 0);
 				}
 				string resourceType = EnumCache<Polytopia.Data.ResourceData.Type>.GetName(ResourceData.Type.Fruit).ToLower();
 				foreach (var enumValue in Enum.GetValues<ResourceData.Type>())
@@ -188,11 +189,13 @@ namespace PolyMod
 				if (resourceSprite != null)
 				{
 					tile.Resource.sprite = resourceSprite;
+					tile.Resource.transform.localScale = new Vector3(0.6f, 1.2f, 0);
 				}
 				Sprite? animalSprite = ModLoader.GetSprite("game", style);
 				if (animalSprite != null)
 				{
 					tile.Animal.sprite = animalSprite;
+					tile.Animal.transform.localScale = new Vector3(0.9f, 0.6f, 0);
 				}
 			}
 		}
