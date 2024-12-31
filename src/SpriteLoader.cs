@@ -2,47 +2,16 @@ using HarmonyLib;
 using Polytopia.Data;
 using UnityEngine;
 using UnityEngine.U2D;
+using UnityEngine.UI;
 
 namespace PolyMod
 {
 	public class SpritesLoader
 	{
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.GetUnlockItems))]
-		private static void TechItem_GetUnlockItems(TechData techData, PlayerState playerState, bool onlyPickFirstItem = false)
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
+		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))] // Crash preventive patch
 		private static void TechItem_SetupComplete()
 		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(UICityPlot), nameof(UICityPlot.AddHouse))]
-		private static void UICityPlot_AddHouse()
-		{
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.LateUpdate))]
-		private static void MapRenderer_LateUpdate()
-		{
-		}
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(City), nameof(City.UpdateObject))]
-		private static void City_UpdateObject(City __instance)
-		{
-			if (__instance.state.name != null)
-			{
-				if ((int)__instance.Owner.tribe > 17)
-				{
-					__instance.cityRenderer.Tribe = TribeData.Type.Imperius;
-					__instance.cityRenderer.SkinType = SkinType.Default;
-					__instance.cityRenderer.RefreshCity();
-				}
-			}
 		}
 
 		[HarmonyPostfix]
@@ -159,7 +128,7 @@ namespace PolyMod
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(UIWorldPreview), nameof(UIWorldPreview.SetPreview), new Type[] { })]
-		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) //bad idea to do it here, i will find better place later.
+		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) // TODO
 		{
 			//base.Show(origin);
 			foreach (var image in GameObject.FindObjectsOfType<UnityEngine.UI.Image>())
@@ -196,18 +165,11 @@ namespace PolyMod
 				UnitData.Type type = improvementData2.CreatesUnit();
 				if (type == UnitData.Type.None && uiroundButton.icon.sprite.name == "placeholder")
 				{
-					string name;
 					try
 					{
-						if(ModLoader.gldDictionaryInversed.ContainsKey((int)improvementData2.type))
-						{
-							name = ModLoader.gldDictionaryInversed[(int)improvementData2.type];
-						}
-						else
-						{
-							name = improvementData2.type.ToString();
-						}
-						uiroundButton.SetSprite(ModLoader.GetSprite(name, player.tribe.ToString()));
+						string improvementType = EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(improvementData2.type).ToLower();
+						string tribeType = EnumCache<Polytopia.Data.TribeData.Type>.GetName(player.tribe).ToLower();
+						uiroundButton.SetSprite(ModLoader.GetSprite(improvementType, tribeType));
 					}
 					catch{}
 				}
@@ -231,6 +193,215 @@ namespace PolyMod
 				// 	}
 				// }
 			// }
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIIconData), nameof(UIIconData.GetImage))]
+		private static void UIIconData_GetImage(ref Image __result, UIIconData __instance, string id) // TODO
+		{
+			//Console.Write(id);
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIUnitRenderer), nameof(UIUnitRenderer.CreateUnit))]
+		private static void UIUnitRenderer_CreateUnit(UIUnitRenderer __instance)
+		{
+			Transform headTransform = __instance.transform.Find("Head");
+
+			if (headTransform != null)
+			{
+				GameObject childGameObject = headTransform.gameObject;
+				Image headImage = childGameObject.GetComponent<Image>();
+
+				string name;
+				string skin = EnumCache<Polytopia.Data.SkinType>
+					.GetName(__instance.skin)
+					.ToLower();
+				if(skin != "default")
+				{
+					name = skin;
+				}
+				else
+				{
+					name = EnumCache<Polytopia.Data.TribeData.Type>
+					.GetName(__instance.tribe)
+					.ToLower();
+				}
+				Sprite? sprite = ModLoader.GetSprite("head", name);
+
+				if(sprite != null)
+				{
+					headImage.sprite = sprite;
+					headImage.gameObject.transform.localScale = new Vector3(1.5f, 1.5f, 0);
+				}
+			}
+		}
+
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetTile))]
+		private static void UIUtils_GetTile(ref RectTransform __result, Polytopia.Data.TerrainData.Type type, int climate, SkinType skin)
+		{
+			RectTransform rectTransform = __result;
+			Sprite? sprite;
+			TribeData.Type tribeTypeFromStyle = GameManager.GameState.GameLogicData.GetTribeTypeFromStyle(climate);
+			if (type == Polytopia.Data.TerrainData.Type.Mountain)
+			{
+				Sprite? fieldSprite;
+				Sprite? mountainSprite;
+				rectTransform = new GameObject
+				{
+					name = "UIMountainContainer"
+				}.AddComponent<RectTransform>();
+
+				sprite = ModLoader.GetSprite("field", EnumCache<Polytopia.Data.SkinType>
+					.GetName(skin).ToLower());
+
+				if(sprite == null)
+				{
+					sprite = ModLoader.GetSprite("field", EnumCache<Polytopia.Data.TribeData.Type>
+						.GetName(tribeTypeFromStyle).ToLower());
+					if(sprite == null)
+					{
+						return;
+					}
+				}
+				fieldSprite = sprite;
+
+				sprite = ModLoader.GetSprite("mountain", EnumCache<Polytopia.Data.SkinType>
+					.GetName(skin).ToLower());
+
+				if(sprite == null)
+				{
+					sprite = ModLoader.GetSprite("mountain", EnumCache<Polytopia.Data.TribeData.Type>
+						.GetName(tribeTypeFromStyle).ToLower());
+					if(sprite == null)
+					{
+						return;
+					}
+				}
+				mountainSprite = sprite;
+				Image fieldImage = UIUtils.GetImage();
+				fieldImage.name = fieldSprite.name;
+				fieldImage.sprite = fieldSprite;
+				fieldImage.SetNativeSize();
+
+				Image mountainImage = UIUtils.GetImage();
+				mountainImage.name = mountainSprite.name;
+				mountainImage.sprite = mountainSprite;
+				mountainImage.SetNativeSize();
+				fieldImage.SetNativeSize();
+				mountainImage.SetNativeSize();
+				fieldImage.raycastTarget = false;
+				mountainImage.raycastTarget = false;
+				RectTransform rectTransform2 = fieldImage.rectTransform;
+				RectTransform rectTransform3 = mountainImage.rectTransform;
+				rectTransform2.SetParent(rectTransform, false);
+				rectTransform3.SetParent(rectTransform, false);
+				rectTransform2.anchoredPosition = Vector2.zero;
+				rectTransform3.anchoredPosition = new Vector2(0.19f, 15.52f);
+			}
+			else
+			{
+				Image image = UIUtils.GetImage();
+				sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.TerrainData.Type>.GetName(type).ToLower(), EnumCache<Polytopia.Data.TribeData.Type>
+						.GetName(tribeTypeFromStyle).ToLower());
+				if(sprite != null)
+				{
+					image.name = sprite.name;
+					image.sprite = sprite;
+					image.SetNativeSize();
+					rectTransform = image.rectTransform;
+				}
+			}
+			__result = rectTransform;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetImprovementSprite), new Type[] { typeof(ImprovementData.Type), typeof(TribeData.Type), typeof(SkinType), typeof(SpriteAtlasManager)})]
+		private static void GetImprovementSprite(ref Sprite __result, ImprovementData.Type improvement, TribeData.Type tribe, SkinType skin, SpriteAtlasManager atlasManager)
+		{
+			string style;
+			if(skin != SkinType.Default)
+			{
+				style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
+			}
+			else
+			{
+				style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
+			}
+			Sprite? sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(improvement).ToLower(), style);
+			if(sprite != null)
+			{
+				__result = sprite;
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.GetHouse))]
+		private static void GetHouse(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, TribeData.Type tribe, int type, SkinType skinType)
+		{
+			PolytopiaSpriteRenderer polytopiaSpriteRenderer = __result;
+
+			if(type != __instance.HOUSE_WORKSHOP && type != __instance.HOUSE_PARK)
+			{
+				string style;
+				if(skinType != SkinType.Default)
+				{
+					style = EnumCache<Polytopia.Data.SkinType>.GetName(skinType).ToLower();
+				}
+				else
+				{
+					style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
+				}
+				Sprite? sprite = ModLoader.GetSprite("house", style, type);
+				if (sprite != null)
+				{
+					polytopiaSpriteRenderer.Sprite = sprite;
+					TerrainMaterialHelper.SetSpriteSaturated(polytopiaSpriteRenderer, __instance.IsEnemyCity);
+					__result = polytopiaSpriteRenderer;
+				}
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UICityRenderer), nameof(UICityRenderer.GetResource))]
+		private static void UICityRenderer_GetResource(ref GameObject __result, string baseName, Polytopia.Data.TribeData.Type tribe, Polytopia.Data.SkinType skin)
+		{
+			GameObject resourceObject = __result;
+			Image imageComponent = resourceObject.GetComponent<Image>();
+			string[] tokens = baseName.Split('_');
+			if(tokens.Length > 0)
+			{
+				if(tokens[0] == "House")
+				{
+					int level = 0;
+					if(tokens.Length > 1)
+					{
+						int.TryParse(tokens[1], out level);
+					}
+
+					string style;
+					if(skin != SkinType.Default)
+					{
+						style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
+					}
+					else
+					{
+						style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
+					}
+
+					Sprite? sprite = ModLoader.GetSprite("house", style, level);
+					if(sprite == null)
+					{
+						return;
+					}
+					imageComponent.sprite = sprite;
+					imageComponent.SetNativeSize();
+
+					__result = resourceObject;
+				}
+			}
 		}
 
 		private static Sprite GetSpriteForTile(Sprite sprite, Tile tile, string name, int level = 0)
