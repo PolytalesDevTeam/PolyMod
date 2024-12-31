@@ -27,13 +27,15 @@ namespace PolyMod
 
 			internal Version version;
 			internal string[] authors;
+			internal Dependency[] dependencies;
 			internal Status status;
 			internal List<File> files;
 
-			internal Mod(Version version, string[] authors, Status status, List<File> files)
+			internal Mod(Manifest manifest, Status status, List<File> files)
 			{
-				this.version = version;
-				this.authors = authors;
+				version = manifest.version;
+				authors = manifest.authors;
+				dependencies = manifest.dependencies;
 				this.status = status;
 				this.files = files;
 			}
@@ -55,7 +57,6 @@ namespace PolyMod
 		public static Dictionary<string, int> gldDictionary = new();
 		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static Dictionary<string, Mod> mods = new();
-		public static List<Mod.Dependency> dependencies = new();
 		public static Dictionary<int, int> climateToTribeData = new();
 		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static bool shouldInitializeSprites = true;
@@ -171,10 +172,8 @@ namespace PolyMod
 						Plugin.logger.LogError($"Mod {manifest.id} already exists");
 						continue;
 					}
-					if (manifest.dependencies != null) dependencies.AddRange(manifest.dependencies);
 					mods.Add(manifest.id, new(
-						manifest.version,
-						manifest.authors,
+						manifest,
 						Mod.Status.SUCCESS,
 						files
 					));
@@ -186,35 +185,34 @@ namespace PolyMod
 				}
 			}
 
-			foreach (var dependency in dependencies)
-			{
-				string? message = null;
-				if (!mods.ContainsKey(dependency.id))
-				{
-					message = $"Dependency {dependency.id} not found";
-				}
-				Version version = mods[dependency.id].version;
-				if (
-					(dependency.min != null && version < dependency.min) 
-					||
-					(dependency.max != null && version > dependency.max)
-				)
-				{
-					message = $"Need dependency {dependency.id} version {dependency.min} - {dependency.max} found {version}";
-				}
-				if (message != null) 
-				{
-					if (dependency.required)
-					{
-						Plugin.logger.LogFatal(message);
-						Environment.Exit(-1);
-					}
-					Plugin.logger.LogWarning(message);
-				}
-			}
-
 			foreach (var (id, mod) in mods)
 			{
+				foreach (var dependency in mod.dependencies ?? Array.Empty<Mod.Dependency>())
+				{
+					string? message = null;
+					if (!mods.ContainsKey(dependency.id))
+					{
+						message = $"Dependency {dependency.id} not found";
+					}
+					Version version = mods[dependency.id].version;
+					if (
+						(dependency.min != null && version < dependency.min) 
+						||
+						(dependency.max != null && version > dependency.max)
+					)
+					{
+						message = $"Need dependency {dependency.id} version {dependency.min} - {dependency.max} found {version}";
+					}
+					if (message != null) 
+					{
+						if (dependency.required)
+						{
+							Plugin.logger.LogFatal(message);
+							mod.status = Mod.Status.ERROR;
+						}
+						Plugin.logger.LogWarning(message);
+					}
+				}
 				foreach (var file in mod.files)
 				{
 					if (Path.GetExtension(file.name) == ".dll")
