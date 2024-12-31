@@ -428,7 +428,8 @@ namespace PolyMod
 			name = name.ToLower();
 			style = style.ToLower();
 			audioSource = audioClips.GetOrDefault($"{name}_{style}", audioSource);
-			return audioSource!.clip;
+			if (audioSource == null) return null;
+			return audioSource.clip;
 		}
 
 		public static string GetJTokenName(JToken token, int n = 1)
