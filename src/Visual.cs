@@ -23,23 +23,21 @@ namespace PolyMod
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(StartScreen), nameof(StartScreen.Start))]
-        private static void StartScreen_Start(StartScreen __instance)
+        private static void StartScreen_Start()
         {
             GameObject originalButton = GameObject.Find("StartScreen/WeeklyChallengesButton");
             GameObject button = GameObject.Instantiate(originalButton, originalButton.transform.parent);
             button.active = true;
             button.GetComponentInChildren<TMPLocalizer>().Text = "PolyMod Discord";
-            UnityEngine.Transform iconContainer = button.transform.Find("IconContainer");
-            iconContainer.GetComponentInChildren<Image>().sprite = SpritesLoader.BuildSprite(Plugin.GetResource("discord_icon.png").ReadBytes(), new Vector2(.5f, .5f));
+            Transform iconContainer = button.transform.Find("IconContainer");
+            iconContainer.GetComponentInChildren<Image>().sprite
+                = SpritesLoader.BuildSprite(Plugin.GetResource("discord_icon.png").ReadBytes(), new Vector2(.5f, .5f));
             iconContainer.localScale = new Vector3(0.55f, 0.6f, 0);
             iconContainer.position -= new Vector3(0, 4, 0);
 
             UIRoundButton buttonObject = button.GetComponent<UIRoundButton>();
-            buttonObject.OnClicked += (UIButtonBase.ButtonAction)OnPolyModButtonClick;
-            void OnPolyModButtonClick(int id, BaseEventData eventdata)
-            {
-                NativeHelpers.OpenURL("https://discord.gg/eWPdhWtfVy", false);
-            }
+            buttonObject.OnClicked += (UIButtonBase.ButtonAction)
+                ((int id, BaseEventData eventdata) => NativeHelpers.OpenURL("https://discord.gg/eWPdhWtfVy", false));
         }
 
         internal static void Init()

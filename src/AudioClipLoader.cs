@@ -10,14 +10,10 @@ namespace PolyMod
         [HarmonyPatch(typeof(MusicData), nameof(MusicData.GetNatureAudioClip))]
         private static bool MusicData_GetNatureAudioClip(ref AudioClip __result, TribeData.Type type, SkinType skinType)
         {
-            AudioClip? audioClip;
+            AudioClip? audioClip = ModLoader.GetAudioClip("nature", EnumCache<TribeData.Type>.GetName(type));
             if (skinType != SkinType.Default)
             {
                 audioClip = ModLoader.GetAudioClip("nature", EnumCache<SkinType>.GetName(skinType));
-            }
-            else
-            {
-                audioClip = ModLoader.GetAudioClip("nature", EnumCache<TribeData.Type>.GetName(type));
             }
             if (audioClip != null)
             {
@@ -31,14 +27,10 @@ namespace PolyMod
         [HarmonyPatch(typeof(MusicData), nameof(MusicData.GetMusicAudioClip))]
         private static bool MusicData_GetMusicAudioClip(ref AudioClip __result, TribeData.Type type, SkinType skinType)
         {
-            AudioClip? audioClip;
+            AudioClip? audioClip = ModLoader.GetAudioClip("music", EnumCache<TribeData.Type>.GetName(type));
             if (skinType != SkinType.Default)
             {
                 audioClip = ModLoader.GetAudioClip("music", EnumCache<SkinType>.GetName(skinType));
-            }
-            else
-            {
-                audioClip = ModLoader.GetAudioClip("music", EnumCache<TribeData.Type>.GetName(type));
             }
             if (audioClip != null)
             {
