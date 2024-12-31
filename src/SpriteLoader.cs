@@ -78,16 +78,16 @@ namespace PolyMod
 		[HarmonyPatch(typeof(PolytopiaSpriteRenderer), nameof(PolytopiaSpriteRenderer.ForceUpdateMesh))]
 		private static void PolytopiaSpriteRenderer_ForceUpdateMesh(PolytopiaSpriteRenderer __instance)
 		{
-			Transform terrainTranform = __instance.transform.parent;
-			if (terrainTranform != null)
+			if(__instance.gameObject.name.Contains("Forest") || __instance.gameObject.name.Contains("Mountain") || __instance.gameObject.name.Contains("forest") || __instance.gameObject.name.Contains("mountain"))
 			{
-				Transform tileTransform = terrainTranform.parent;
-				if (tileTransform != null)
+				Transform terrainTranform = __instance.transform.parent;
+				if (terrainTranform != null)
 				{
-					Tile tile = tileTransform.GetComponent<Tile>();
-					if (tile != null)
+					Transform tileTransform = terrainTranform.parent;
+					if (tileTransform != null)
 					{
-						if(__instance.sprite.name.Contains("Forest") || __instance.sprite.name.Contains("Mountain") || __instance.sprite.name.Contains("forest") || __instance.sprite.name.Contains("mountain"))
+						Tile tile = tileTransform.GetComponent<Tile>();
+						if (tile != null)
 						{
 							__instance.Sprite = GetSpriteForTile(__instance.Sprite, tile, EnumCache<Polytopia.Data.TerrainData.Type>.GetName(tile.data.terrain).ToLower());
 						}
@@ -130,17 +130,11 @@ namespace PolyMod
 		[HarmonyPatch(typeof(UIWorldPreview), nameof(UIWorldPreview.SetPreview), new Type[] { })]
 		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) // TODO
 		{
-			//base.Show(origin);
 			foreach (var image in GameObject.FindObjectsOfType<UnityEngine.UI.Image>())
 			{
 				if (image.name == "Head")
 				{
 					image.Cast<UnityEngine.UI.Image>();
-					//string idKey = "druid_worldpreview";
-					//string spritesKey = "head_" + idKey + "_";
-					//image.sprite = sprites[spritesKey];
-					//image.m_Sprite = sprites[spritesKey];
-					//image.overrideSprite = sprites[spritesKey];
 				}
 			}
 		}
@@ -174,25 +168,6 @@ namespace PolyMod
 					catch{}
 				}
 			}
-			// if (tile.Data.resource != null && tile.Data.improvement == null)
-			// {
-				// using (List<ImprovementData>.Enumerator enumerator2 = __instance.GetSuggestedUnlockableImprovements(tile.Data.resource.type, player).GetEnumerator())
-				// {
-				// 	while (enumerator2.MoveNext())
-				// 	{
-				// 		ImprovementData improvementData = enumerator2.Current;
-				// 		UIRoundButton uiroundButton2 = __instance.CreateRoundBottomBarButton(Localization.GetSkinned(player.skinType, improvementData.displayName, Array.Empty<object>()), false);
-				// 		TribeData.Type tribeTypeFromStyle2 = GameManager.GameState.GameLogicData.GetTribeTypeFromStyle(tile.Climate);
-				// 		uiroundButton2.iconSpriteHandle.Request(SpriteData.GetBuildingSpriteAddresses(improvementData.type, tile.GetVisualSkinTypeForTile(), tribeTypeFromStyle2));
-				// 		uiroundButton2.buttonActive = false;
-				// 		uiroundButton2.OnClicked += (UIButtonBase.ButtonAction)delegate(int index, BaseEventData eventData)
-				// 		{
-				// 			PopupManager.HideCurrentPopup();
-				// 			__instance.OnUnlockableClicked(improvementData, tile, player);
-				// 		};
-				// 	}
-				// }
-			// }
 		}
 
 		[HarmonyPostfix]
@@ -339,7 +314,7 @@ namespace PolyMod
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(CityRenderer), nameof(CityRenderer.GetHouse))]
-		private static void GetHouse(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, TribeData.Type tribe, int type, SkinType skinType)
+		private static void CityRenderer_GetHouse(ref PolytopiaSpriteRenderer __result, CityRenderer __instance, TribeData.Type tribe, int type, SkinType skinType)
 		{
 			PolytopiaSpriteRenderer polytopiaSpriteRenderer = __result;
 
