@@ -4,8 +4,6 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Injection;
-using LibCpp2IL;
-using Newtonsoft.Json.Linq;
 
 namespace PolyMod
 {
@@ -24,10 +22,11 @@ namespace PolyMod
 		public override void Load()
 		{
 			logger = Log;
-			ModLoader.Init();
-			Visual.Init();
-			SpritesLoader.Init();
 			ConfigFile.CoreConfig[new("Logging.Disk", "WriteUnityLog")].BoxedValue = true;
+			AudioClipLoader.Init();
+			ModLoader.Init();
+			SpritesLoader.Init();
+			Visual.Init();
 			//PolyBreaker.Init();
 		}
 

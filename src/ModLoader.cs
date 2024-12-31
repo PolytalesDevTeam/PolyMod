@@ -16,9 +16,9 @@ using UnityEngine;
 
 namespace PolyMod
 {
-	internal static class ModLoader
+	public static class ModLoader
 	{
-		internal class Mod
+		public class Mod
 		{
 			internal record Dependency(string id, Version min, Version max, bool required = true);
 			internal record Manifest(string id, Version version, string[] authors, Dependency[] dependencies);
@@ -92,50 +92,6 @@ namespace PolyMod
 			{
 				climate = 1;
 			}
-		}
-
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(MusicData), nameof(MusicData.GetNatureAudioClip))]
-		private static bool MusicData_GetNatureAudioClip(ref AudioClip __result, TribeData.Type type, SkinType skinType)
-		{
-			AudioClip? audioClip;
-            if (skinType != SkinType.Default)
-			{
-				audioClip = GetAudioClip("nature", EnumCache<SkinType>.GetName(skinType));
-			}
-			else
-			{
-				audioClip = GetAudioClip("nature", EnumCache<TribeData.Type>.GetName(type));
-			}
-			if (audioClip != null)
-			{
-				Console.WriteLine("LMAO! nature");
-				__result = audioClip;
-				return false;
-			}
-			return true;
-		}
-
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(MusicData), nameof(MusicData.GetMusicAudioClip))]
-		private static bool MusicData_GetMusicAudioClip(ref AudioClip __result, TribeData.Type type, SkinType skinType)
-		{
-            AudioClip? audioClip;
-            if (skinType != SkinType.Default)
-			{
-				audioClip = GetAudioClip("music", EnumCache<SkinType>.GetName(skinType));
-			}
-			else
-			{
-				audioClip = GetAudioClip("music", EnumCache<TribeData.Type>.GetName(type));
-			}
-			if (audioClip != null)
-			{
-				Console.WriteLine("LMAO!");
-				__result = audioClip;
-				return false;
-			}
-			return true;
 		}
 
 		[HarmonyPostfix]
@@ -241,14 +197,14 @@ namespace PolyMod
 					}
 					Version version = mods[dependency.id].version;
 					if (
-						(dependency.min != null && version < dependency.min) 
+						(dependency.min != null && version < dependency.min)
 						||
 						(dependency.max != null && version > dependency.max)
 					)
 					{
 						message = $"Need dependency {dependency.id} version {dependency.min} - {dependency.max} found {version}";
 					}
-					if (message != null) 
+					if (message != null)
 					{
 						if (dependency.required)
 						{
@@ -454,7 +410,7 @@ namespace PolyMod
 			gld.Merge(patch, new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge });
 		}
 
-		internal static Sprite? GetSprite(string name, string style = "", int level = 0)
+		public static Sprite? GetSprite(string name, string style = "", int level = 0)
 		{
 			Sprite? sprite = null;
 			name = name.ToLower();
@@ -466,7 +422,7 @@ namespace PolyMod
 			return sprite;
 		}
 
-		internal static AudioClip? GetAudioClip(string name, string style)
+		public static AudioClip? GetAudioClip(string name, string style)
 		{
 			AudioSource? audioSource = null;
 			name = name.ToLower();

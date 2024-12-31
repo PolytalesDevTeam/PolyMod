@@ -24,7 +24,7 @@ namespace PolyMod
 				string skin = EnumCache<Polytopia.Data.SkinType>
 					.GetName(__instance.Owner.skinType)
 					.ToLower();
-				if(skin != "default")
+				if (skin != "default")
 				{
 					name = skin;
 				}
@@ -35,13 +35,13 @@ namespace PolyMod
 					.ToLower();
 				}
 				Sprite? sprite = ModLoader.GetSprite("head", name);
-				if(sprite != null)
+				if (sprite != null)
 				{
 					__instance.transform.FindChild("SpriteContainer/Head")
 								.GetComponent<SpriteRenderer>().sprite = sprite;
 				}
 			}
-			catch{}
+			catch { }
 		}
 
 		[HarmonyPostfix]
@@ -63,7 +63,7 @@ namespace PolyMod
 		private static void TerrainRenderer_UpdateGraphics(TerrainRenderer __instance, Tile tile)
 		{
 			string? name;
-			if(tile.data.terrain == Polytopia.Data.TerrainData.Type.Forest || tile.data.terrain == Polytopia.Data.TerrainData.Type.Mountain)
+			if (tile.data.terrain == Polytopia.Data.TerrainData.Type.Forest || tile.data.terrain == Polytopia.Data.TerrainData.Type.Mountain)
 			{
 				name = "field";
 			}
@@ -74,11 +74,11 @@ namespace PolyMod
 			__instance.spriteRenderer.Sprite = GetSpriteForTile(__instance.spriteRenderer.Sprite, tile, name);
 		}
 
-        [HarmonyPostfix]
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(PolytopiaSpriteRenderer), nameof(PolytopiaSpriteRenderer.ForceUpdateMesh))]
 		private static void PolytopiaSpriteRenderer_ForceUpdateMesh(PolytopiaSpriteRenderer __instance)
 		{
-			if(__instance.gameObject.name.Contains("Forest") || __instance.gameObject.name.Contains("Mountain") || __instance.gameObject.name.Contains("forest") || __instance.gameObject.name.Contains("mountain"))
+			if (__instance.gameObject.name.Contains("Forest") || __instance.gameObject.name.Contains("Mountain") || __instance.gameObject.name.Contains("forest") || __instance.gameObject.name.Contains("mountain"))
 			{
 				Transform terrainTranform = __instance.transform.parent;
 				if (terrainTranform != null)
@@ -116,14 +116,14 @@ namespace PolyMod
 			{
 				string[] names = sprite.Split('_');
 				Sprite? newSprite = ModLoader.GetSprite(names[0], names[1]);
-				if(newSprite != null)
+				if (newSprite != null)
 				{
 					__result = newSprite;
 				}
 				return;
 			}
-			catch(Exception)
-			{}
+			catch (Exception)
+			{ }
 		}
 
 		[HarmonyPostfix]
@@ -165,7 +165,7 @@ namespace PolyMod
 						string tribeType = EnumCache<Polytopia.Data.TribeData.Type>.GetName(player.tribe).ToLower();
 						uiroundButton.SetSprite(ModLoader.GetSprite(improvementType, tribeType));
 					}
-					catch{}
+					catch { }
 				}
 			}
 		}
@@ -192,7 +192,7 @@ namespace PolyMod
 				string skin = EnumCache<Polytopia.Data.SkinType>
 					.GetName(__instance.skin)
 					.ToLower();
-				if(skin != "default")
+				if (skin != "default")
 				{
 					name = skin;
 				}
@@ -204,7 +204,7 @@ namespace PolyMod
 				}
 				Sprite? sprite = ModLoader.GetSprite("head", name);
 
-				if(sprite != null)
+				if (sprite != null)
 				{
 					headImage.sprite = sprite;
 					headImage.gameObject.transform.localScale = new Vector3(1.5f, 1.5f, 0);
@@ -232,11 +232,11 @@ namespace PolyMod
 				sprite = ModLoader.GetSprite("field", EnumCache<Polytopia.Data.SkinType>
 					.GetName(skin).ToLower());
 
-				if(sprite == null)
+				if (sprite == null)
 				{
 					sprite = ModLoader.GetSprite("field", EnumCache<Polytopia.Data.TribeData.Type>
 						.GetName(tribeTypeFromStyle).ToLower());
-					if(sprite == null)
+					if (sprite == null)
 					{
 						return;
 					}
@@ -246,11 +246,11 @@ namespace PolyMod
 				sprite = ModLoader.GetSprite("mountain", EnumCache<Polytopia.Data.SkinType>
 					.GetName(skin).ToLower());
 
-				if(sprite == null)
+				if (sprite == null)
 				{
 					sprite = ModLoader.GetSprite("mountain", EnumCache<Polytopia.Data.TribeData.Type>
 						.GetName(tribeTypeFromStyle).ToLower());
-					if(sprite == null)
+					if (sprite == null)
 					{
 						return;
 					}
@@ -281,7 +281,7 @@ namespace PolyMod
 				Image image = UIUtils.GetImage();
 				sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.TerrainData.Type>.GetName(type).ToLower(), EnumCache<Polytopia.Data.TribeData.Type>
 						.GetName(tribeTypeFromStyle).ToLower());
-				if(sprite != null)
+				if (sprite != null)
 				{
 					image.name = sprite.name;
 					image.sprite = sprite;
@@ -293,11 +293,11 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
-		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetImprovementSprite), new Type[] { typeof(ImprovementData.Type), typeof(TribeData.Type), typeof(SkinType), typeof(SpriteAtlasManager)})]
+		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetImprovementSprite), new Type[] { typeof(ImprovementData.Type), typeof(TribeData.Type), typeof(SkinType), typeof(SpriteAtlasManager) })]
 		private static void GetImprovementSprite(ref Sprite __result, ImprovementData.Type improvement, TribeData.Type tribe, SkinType skin, SpriteAtlasManager atlasManager)
 		{
 			string style;
-			if(skin != SkinType.Default)
+			if (skin != SkinType.Default)
 			{
 				style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
 			}
@@ -306,7 +306,7 @@ namespace PolyMod
 				style = EnumCache<Polytopia.Data.TribeData.Type>.GetName(tribe).ToLower();
 			}
 			Sprite? sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.ImprovementData.Type>.GetName(improvement).ToLower(), style);
-			if(sprite != null)
+			if (sprite != null)
 			{
 				__result = sprite;
 			}
@@ -318,10 +318,10 @@ namespace PolyMod
 		{
 			PolytopiaSpriteRenderer polytopiaSpriteRenderer = __result;
 
-			if(type != __instance.HOUSE_WORKSHOP && type != __instance.HOUSE_PARK)
+			if (type != __instance.HOUSE_WORKSHOP && type != __instance.HOUSE_PARK)
 			{
 				string style;
-				if(skinType != SkinType.Default)
+				if (skinType != SkinType.Default)
 				{
 					style = EnumCache<Polytopia.Data.SkinType>.GetName(skinType).ToLower();
 				}
@@ -346,18 +346,18 @@ namespace PolyMod
 			GameObject resourceObject = __result;
 			Image imageComponent = resourceObject.GetComponent<Image>();
 			string[] tokens = baseName.Split('_');
-			if(tokens.Length > 0)
+			if (tokens.Length > 0)
 			{
-				if(tokens[0] == "House")
+				if (tokens[0] == "House")
 				{
 					int level = 0;
-					if(tokens.Length > 1)
+					if (tokens.Length > 1)
 					{
 						int.TryParse(tokens[1], out level);
 					}
 
 					string style;
-					if(skin != SkinType.Default)
+					if (skin != SkinType.Default)
 					{
 						style = EnumCache<Polytopia.Data.SkinType>.GetName(skin).ToLower();
 					}
@@ -367,7 +367,7 @@ namespace PolyMod
 					}
 
 					Sprite? sprite = ModLoader.GetSprite("house", style, level);
-					if(sprite == null)
+					if (sprite == null)
 					{
 						return;
 					}
@@ -388,13 +388,13 @@ namespace PolyMod
 					.ToLower();
 
 				Sprite? newSprite = ModLoader.GetSprite(name, tribe, level);
-				if(newSprite != null)
+				if (newSprite != null)
 				{
 					sprite = newSprite;
 				}
 			}
 			catch
-			{}
+			{ }
 			return sprite;
 		}
 
@@ -406,7 +406,7 @@ namespace PolyMod
 			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
 		}
 
-		public static void Init()
+		internal static void Init()
 		{
 			Harmony.CreateAndPatchAll(typeof(SpritesLoader));
 		}
