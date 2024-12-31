@@ -146,18 +146,21 @@ namespace PolyMod
 			}
 			foreach (UITile tile in __instance.tiles)
 			{
-				if((tile.Position.x == -1 && tile.Position.y == 3) || (tile.Position.x == 1 && tile.Position.y == 2))
+				if((int)__instance.skinType >= 1000 || (int)__instance.tribeData.type >= 1000)
 				{
-					tile.Forest.gameObject.SetActive(true);
-					tile.Animal.gameObject.SetActive(true);
-				}
-				else if((tile.Position.x == -1 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 5) || (tile.Position.x == 0 && tile.Position.y == 2))
-				{
-					tile.Mountain.gameObject.SetActive(true);
-				}
-				else if((tile.Position.x == 0 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 0))
-				{
-					tile.Resource.gameObject.SetActive(true);
+					if((tile.Position.x == -1 && tile.Position.y == 3) || (tile.Position.x == 1 && tile.Position.y == 2))
+					{
+						tile.Forest.gameObject.SetActive(true);
+						tile.Animal.gameObject.SetActive(true);
+					}
+					else if((tile.Position.x == -1 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 5) || (tile.Position.x == 0 && tile.Position.y == 2))
+					{
+						tile.Mountain.gameObject.SetActive(true);
+					}
+					else if((tile.Position.x == 0 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 0))
+					{
+						tile.Resource.gameObject.SetActive(true);
+					}
 				}
 				string terrainType = tile.Tile.sprite.name;
 				if(terrainType == "ground")
