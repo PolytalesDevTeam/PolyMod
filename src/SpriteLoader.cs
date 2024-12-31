@@ -138,7 +138,7 @@ namespace PolyMod
 			}
 			foreach (UITile tile in __instance.tiles)
 			{
-				if ((int)__instance.skinType >= 1000 || (int)__instance.tribeData.type >= 1000)
+				if ((int)__instance.tribeData.type >= Plugin.AUTOIDX_STARTS_FROM)
 				{
 					if ((tile.Position.x == -1 && tile.Position.y == 3) || (tile.Position.x == 1 && tile.Position.y == 2))
 					{
@@ -174,38 +174,15 @@ namespace PolyMod
 				{
 					tile.Mountain.sprite = mountainSprite;
 				}
-				string resourceType = tile.Resource.sprite.name;
-				if (resourceType.Contains("crop"))
+				string resourceType = EnumCache<Polytopia.Data.ResourceData.Type>.GetName(ResourceData.Type.Fruit).ToLower();
+				foreach (var enumValue in Enum.GetValues<ResourceData.Type>())
 				{
-					resourceType = "crop";
-				}
-				else if (resourceType.Contains("fish"))
-				{
-					resourceType = "fish";
-				}
-				else if (resourceType.Contains("whale"))
-				{
-					resourceType = "whale";
-				}
-				else if (resourceType.Contains("metal"))
-				{
-					resourceType = "metal";
-				}
-				else if (resourceType.Contains("spores"))
-				{
-					resourceType = "spores";
-				}
-				else if (resourceType.Contains("starfish"))
-				{
-					resourceType = "starfish";
-				}
-				else if (resourceType.Contains("aquacrop"))
-				{
-					resourceType = "aquacrop";
-				}
-				else
-				{
-					resourceType = "fruit";
+					string resource = EnumCache<Polytopia.Data.ResourceData.Type>.GetName((ResourceData.Type)enumValue).ToLower();
+					if(tile.Resource.sprite.name.Contains(resource))
+					{
+						resourceType = resource;
+						break;
+					}
 				}
 				Sprite? resourceSprite = ModLoader.GetSprite(resourceType, style);
 				if (resourceSprite != null)
