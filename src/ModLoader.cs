@@ -20,18 +20,18 @@ namespace PolyMod
 	{
 		public class Mod
 		{
-			internal record Dependency(string id, Version min, Version max, bool required = true);
-			internal record Manifest(string id, Version version, string[] authors, Dependency[] dependencies);
-			internal record File(string name, byte[] bytes);
-			internal enum Status { SUCCESS, ERROR };
+			public record Dependency(string id, Version min, Version max, bool required = true);
+			public record Manifest(string id, Version version, string[] authors, Dependency[] dependencies);
+			public record File(string name, byte[] bytes);
+			public enum Status { SUCCESS, ERROR };
 
-			internal Version version;
-			internal string[] authors;
-			internal Dependency[] dependencies;
-			internal Status status;
-			internal List<File> files;
+			public Version version;
+			public string[] authors;
+			public Dependency[] dependencies;
+			public Status status;
+			public List<File> files;
 
-			internal Mod(Manifest manifest, Status status, List<File> files)
+			public Mod(Manifest manifest, Status status, List<File> files)
 			{
 				version = manifest.version;
 				authors = manifest.authors;
@@ -40,7 +40,7 @@ namespace PolyMod
 				this.files = files;
 			}
 
-			internal string GetPrettyStatus()
+			public string GetPrettyStatus()
 			{
 				return status switch
 				{
@@ -50,6 +50,8 @@ namespace PolyMod
 				};
 			}
 		}
+
+		public record Preview(); //TODO: preview structure
 
 		private static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static readonly Stopwatch stopwatch = new();
@@ -322,8 +324,6 @@ namespace PolyMod
 				term.Languages = new Il2CppStringArray(strings.ToArray());
 			}
 
-			patch.Remove("localizationData");
-
 			foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
 			{
 				JObject token = jtoken.Cast<JObject>();
@@ -361,6 +361,12 @@ namespace PolyMod
 					{
 						skins.Merge(originalSkins);
 					}
+				}
+
+				if (token["preview"] != null) 
+				{
+					Preview? preview = JsonSerializer.Deserialize<Preview>(token["preview"].ToString());
+					//TODO: use preview
 				}
 			}
 
