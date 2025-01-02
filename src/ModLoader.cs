@@ -12,6 +12,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Unity.VectorGraphics.External.LibTessDotNet;
 using UnityEngine;
 
 namespace PolyMod
@@ -217,7 +218,7 @@ namespace PolyMod
 					{
 						if (dependency.required)
 						{
-							Plugin.logger.LogFatal(message);
+							Plugin.logger.LogError(message);
 							mod.status = Mod.Status.ERROR;
 						}
 						Plugin.logger.LogWarning(message);
@@ -244,7 +245,7 @@ namespace PolyMod
 						{
 							if (exception.InnerException != null)
 							{
-								Plugin.logger.LogInfo($"Error on loading assembly from {id} mod: {exception.InnerException.Message}");
+								Plugin.logger.LogError($"Error on loading assembly from {id} mod: {exception.InnerException.Message}");
 								mod.status = Mod.Status.ERROR;
 							}
 						}
@@ -273,8 +274,40 @@ namespace PolyMod
 						}
 						catch (Exception e)
 						{
-							Plugin.logger.LogInfo($"Error on loading patch from {id} mod: {e.Message}");
+							Plugin.logger.LogError($"Error on loading patch from {id} mod: {e.Message}");
 							mod.status = Mod.Status.ERROR;
+						}
+					}
+					if (Path.GetFileName(file.name) == "localization.json") 
+					{
+						try
+						{
+							foreach(var (key, data) in JsonSerializer
+								.Deserialize<Dictionary<string, Dictionary<string, string>>>(file.bytes)!
+							)
+							{
+								string name = key.Replace("_", ".");
+								if (name.StartsWith("tribeskins")) name = "TribeSkins/" + name;
+								TermData term = LocalizationManager.Sources[0].AddTerm(name);
+								List<string> strings = new();
+								foreach (string language in LocalizationManager.GetAllLanguages())
+								{
+									if (data.TryGetValue(language, out string? localized))
+									{
+										strings.Add(localized);
+									}
+									else
+									{
+										strings.Add(term.Term);
+									}
+								}
+								term.Languages = new Il2CppStringArray(strings.ToArray());
+							}
+							Plugin.logger.LogInfo($"Registried localization from {id} mod");
+						}
+						catch (Exception e)
+						{
+							Plugin.logger.LogError($"Found invalid localization in {id} mod: {e.Message}");
 						}
 					}
 					if (Path.GetExtension(file.name) == ".png" && shouldInitializeSprites)
@@ -307,30 +340,6 @@ namespace PolyMod
 
 		private static void GameLogicDataPatch(JObject gld, JObject patch)
 		{
-			foreach (JToken jtoken in patch.SelectTokens("$.localizationData.*").ToArray())
-			{
-				JObject token = jtoken.Cast<JObject>();
-				string name = GetJTokenName(token).Replace('_', '.');
-				if (name.StartsWith("tribeskins")) name = "TribeSkins/" + name;
-				TermData term = LocalizationManager.Sources[0].AddTerm(name);
-
-				List<string> strings = new();
-				Il2CppSystem.Collections.Generic.List<string> availableLanguages = LocalizationManager.GetAllLanguages();
-
-				foreach (string language in availableLanguages)
-				{
-					if (token.TryGetValue(language, out JToken localizedString))
-					{
-						strings.Add((string)localizedString);
-					}
-					else
-					{
-						strings.Add(term.Term);
-					}
-				}
-				term.Languages = new Il2CppStringArray(strings.ToArray());
-			}
-
 			foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
 			{
 				JObject token = jtoken.Cast<JObject>();
