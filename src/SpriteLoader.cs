@@ -1,3 +1,4 @@
+using System.Globalization;
 using HarmonyLib;
 using Polytopia.Data;
 using UnityEngine;
@@ -131,72 +132,103 @@ namespace PolyMod
 		[HarmonyPatch(typeof(UIWorldPreview), nameof(UIWorldPreview.SetPreview), new Type[] { })]
 		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) // TODO
 		{
+			if(Plugin.config.debug)
+			{
+				RectMask2D mask = __instance.gameObject.GetComponent<UnityEngine.UI.RectMask2D>();
+				UnityEngine.GameObject.Destroy(mask);
+				__instance.gameObject.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
+				__instance.gameObject.transform.position -= new Vector3(-5f, 35f, 0f);
+			}
+
 			string style = EnumCache<TribeData.Type>.GetName(__instance.tribeData.type);
 			if (__instance.skinType != SkinType.Default)
 			{
 				style = EnumCache<SkinType>.GetName(__instance.skinType);
 			}
-			foreach (UITile tile in __instance.tiles)
+
+			List<PolyMod.ModLoader.PreviewTile>? preview = null;
+			if(ModLoader.tribePreviews.ContainsKey(style))
 			{
-				if ((int)__instance.tribeData.type >= Plugin.AUTOIDX_STARTS_FROM)
+				preview = ModLoader.tribePreviews[style];
+			}
+			List<UITile> tiles = __instance.tiles.ToArray().ToList();
+			List<UITile> sortedTiles = tiles
+				.OrderBy(tile => tile.Position.y)
+				.ThenBy(tile => tile.Position.x)
+				.ToList();
+
+			int i = 0;
+			foreach (UITile tile in sortedTiles)
+			{
+				if(Plugin.config.debug)
 				{
-					if ((tile.Position.x == -1 && tile.Position.y == 3) || (tile.Position.x == 1 && tile.Position.y == 2))
+					tile.DebugText.text = i.ToString();
+					tile.DebugText.gameObject.SetActive(true);
+				}
+				if(preview != null && preview.Count - 1 >= i)
+				{
+					ModLoader.PreviewTile? previewTile = preview.FirstOrDefault(tile => tile.idx == i); //TODO: FIX IDX
+					if(previewTile != null)
 					{
-						tile.Forest.gameObject.SetActive(true);
-						tile.Animal.gameObject.SetActive(true);
+						tile.Tile.gameObject.SetActive(false);
+						tile.Mountain.gameObject.SetActive(false);
+						tile.Forest.gameObject.SetActive(false);
+						tile.Resource.gameObject.SetActive(false);
+						tile.Animal.gameObject.SetActive(false);
+						tile.Improvement.gameObject.SetActive(false);
+
+
+						SkinVisualsTransientData data = new SkinVisualsTransientData();
+						data.tileClimateSettings = new TribeAndSkin(__instance.tribeData.type, __instance.skinType);
+						UIUtils.SkinnedTerrainSprites skinnedTerrainSprites = UIUtils.GetTerrainSprite(data, previewTile.terrainType, GameManager.GetSpriteAtlasManager());
+						if(skinnedTerrainSprites.groundTerrain != null)
+						{
+							tile.Tile.sprite = skinnedTerrainSprites.groundTerrain;
+						}
+						if(skinnedTerrainSprites.forestOrMountainTerrain != null)
+						{
+							tile.Mountain.sprite = skinnedTerrainSprites.forestOrMountainTerrain;
+							tile.Forest.sprite = skinnedTerrainSprites.forestOrMountainTerrain;
+						}
+						switch(previewTile.terrainType)
+						{
+							case Polytopia.Data.TerrainData.Type.None:
+								break;
+							case Polytopia.Data.TerrainData.Type.Mountain:
+								tile.Tile.gameObject.SetActive(true);
+								tile.Mountain.gameObject.SetActive(true);
+								break;
+							case Polytopia.Data.TerrainData.Type.Forest:
+								tile.Tile.gameObject.SetActive(true);
+								tile.Forest.gameObject.SetActive(true);
+								break;
+							default:
+								tile.Tile.gameObject.SetActive(true);
+								break;
+						}
+						Sprite? resourceSprite = UIUtils.GetResourceSprite(data, previewTile.resourceType, GameManager.GetSpriteAtlasManager());
+						if(resourceSprite != null)
+						{
+							tile.Animal.sprite = resourceSprite;
+							tile.Resource.sprite = resourceSprite;
+						}
+						switch(previewTile.resourceType)
+						{
+							case Polytopia.Data.ResourceData.Type.Game:
+								tile.Animal.gameObject.SetActive(true);
+								break;
+							default:
+								tile.Resource.gameObject.SetActive(true);
+								break;
+						}
+						if(previewTile.improvementType != Polytopia.Data.ImprovementData.Type.None)
+						{
+							tile.Improvement.sprite = UIUtils.GetImprovementSprite(previewTile.improvementType, __instance.tribeData.type, __instance.skinType, GameManager.GetSpriteAtlasManager()); // TODO: FIX
+							tile.Improvement.gameObject.SetActive(true);
+						}
 					}
-					else if ((tile.Position.x == -1 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 5) || (tile.Position.x == 0 && tile.Position.y == 2))
-					{
-						tile.Mountain.gameObject.SetActive(true);
-					}
-					else if ((tile.Position.x == 0 && tile.Position.y == -1) || (tile.Position.x == 1 && tile.Position.y == 0))
-					{
-						tile.Resource.gameObject.SetActive(true);
-					}
 				}
-				string terrainType = tile.Tile.sprite.name;
-				if (terrainType == "ground")
-				{
-					terrainType = "field";
-				}
-				Sprite? tileSprite = ModLoader.GetSprite(terrainType, style);
-				if (tileSprite != null)
-				{
-					tile.Tile.sprite = tileSprite;
-				}
-				Sprite? forestSprite = ModLoader.GetSprite("forest", style);
-				if (forestSprite != null)
-				{
-					tile.Forest.sprite = forestSprite;
-				}
-				Sprite? mountainSprite = ModLoader.GetSprite("mountain", style);
-				if (mountainSprite != null)
-				{
-					tile.Mountain.sprite = mountainSprite;
-					tile.Mountain.transform.localScale = new Vector3(1f, 0.7f, 0);
-				}
-				string resourceType = EnumCache<Polytopia.Data.ResourceData.Type>.GetName(ResourceData.Type.Fruit).ToLower();
-				foreach (var enumValue in Enum.GetValues<ResourceData.Type>())
-				{
-					string resource = EnumCache<Polytopia.Data.ResourceData.Type>.GetName((ResourceData.Type)enumValue).ToLower();
-					if (tile.Resource.sprite.name.Contains(resource))
-					{
-						resourceType = resource;
-						break;
-					}
-				}
-				Sprite? resourceSprite = ModLoader.GetSprite(resourceType, style);
-				if (resourceSprite != null)
-				{
-					tile.Resource.sprite = resourceSprite;
-					tile.Resource.transform.localScale = new Vector3(0.6f, 1.2f, 0);
-				}
-				Sprite? animalSprite = ModLoader.GetSprite("game", style);
-				if (animalSprite != null)
-				{
-					tile.Animal.sprite = animalSprite;
-					tile.Animal.transform.localScale = new Vector3(0.9f, 0.6f, 0);
-				}
+				i++;
 			}
 		}
 
@@ -269,75 +301,21 @@ namespace PolyMod
 		private static void UIUtils_GetTile(ref RectTransform __result, Polytopia.Data.TerrainData.Type type, int climate, SkinType skin)
 		{
 			RectTransform rectTransform = __result;
-			Sprite? sprite;
 			TribeData.Type tribeTypeFromStyle = GameManager.GameState.GameLogicData.GetTribeTypeFromStyle(climate);
-			if (type == Polytopia.Data.TerrainData.Type.Mountain)
+			SkinVisualsTransientData data = new SkinVisualsTransientData();
+			data.tileClimateSettings = new TribeAndSkin(tribeTypeFromStyle, skin);
+			UIUtils.SkinnedTerrainSprites skinnedTerrainSprites = UIUtils.GetTerrainSprite(data, type, GameManager.GetSpriteAtlasManager());
+
+			int count = 0;
+			foreach (Il2CppSystem.Object child in rectTransform)
 			{
-				Sprite? fieldSprite;
-				Sprite? mountainSprite;
-				rectTransform = new GameObject
-				{
-					name = "UIMountainContainer"
-				}.AddComponent<RectTransform>();
-
-				sprite = ModLoader.GetSprite("field", EnumCache<SkinType>.GetName(skin));
-				if (sprite == null)
-				{
-					sprite = ModLoader.GetSprite("field", EnumCache<TribeData.Type>.GetName(tribeTypeFromStyle));
-					if (sprite == null)
-					{
-						return;
-					}
-				}
-				fieldSprite = sprite;
-
-				sprite = ModLoader.GetSprite("mountain", EnumCache<SkinType>.GetName(skin));
-				if (sprite == null)
-				{
-					sprite = ModLoader.GetSprite(
-						"mountain",
-						EnumCache<TribeData.Type>.GetName(tribeTypeFromStyle)
-					);
-					if (sprite == null)
-					{
-						return;
-					}
-				}
-				mountainSprite = sprite;
-				Image fieldImage = UIUtils.GetImage();
-				fieldImage.name = fieldSprite.name;
-				fieldImage.sprite = fieldSprite;
-				fieldImage.SetNativeSize();
-
-				Image mountainImage = UIUtils.GetImage();
-				mountainImage.name = mountainSprite.name;
-				mountainImage.sprite = mountainSprite;
-				mountainImage.SetNativeSize();
-				fieldImage.SetNativeSize();
-				mountainImage.SetNativeSize();
-				fieldImage.raycastTarget = false;
-				mountainImage.raycastTarget = false;
-				RectTransform rectTransform2 = fieldImage.rectTransform;
-				RectTransform rectTransform3 = mountainImage.rectTransform;
-				rectTransform2.SetParent(rectTransform, false);
-				rectTransform3.SetParent(rectTransform, false);
-				rectTransform2.anchoredPosition = Vector2.zero;
-				rectTransform3.anchoredPosition = new Vector2(0.19f, 15.52f);
-			}
-			else
-			{
-				Image image = UIUtils.GetImage();
-				sprite = ModLoader.GetSprite(
-					EnumCache<Polytopia.Data.TerrainData.Type>.GetName(type),
-					EnumCache<TribeData.Type>.GetName(tribeTypeFromStyle)
-				);
-				if (sprite != null)
-				{
-					image.name = sprite.name;
-					image.sprite = sprite;
-					image.SetNativeSize();
-					rectTransform = image.rectTransform;
-				}
+				Transform childTransform = child.Cast<Transform>();
+				Image image = childTransform.GetComponent<Image>();
+				Sprite? sprite = count == 0 ? skinnedTerrainSprites.groundTerrain : skinnedTerrainSprites.forestOrMountainTerrain;
+				image.name = sprite.name;
+				image.sprite = sprite;
+				image.SetNativeSize();
+				count++;
 			}
 			__result = rectTransform;
 		}
@@ -356,6 +334,63 @@ namespace PolyMod
 			{
 				__result = sprite;
 			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetResourceSprite))]
+		private static void UIUtils_GetResourceSprite(ref Sprite __result, SkinVisualsTransientData data, ResourceData.Type resource, SpriteAtlasManager atlasManager)
+		{
+			TribeData.Type tribe = data.tileClimateSettings.tribe;
+			SkinType skin = data.tileClimateSettings.skin;
+			string style = EnumCache<TribeData.Type>.GetName(tribe);
+			if (skin != SkinType.Default)
+			{
+				style = EnumCache<SkinType>.GetName(skin);
+			}
+			Sprite? sprite = ModLoader.GetSprite(EnumCache<ResourceData.Type>.GetName(resource), style);
+			if (sprite != null)
+			{
+				__result = sprite;
+			}
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIUtils), nameof(UIUtils.GetTerrainSprite))]
+		private static void UIUtils_GetTerrainSprite(ref UIUtils.SkinnedTerrainSprites __result, SkinVisualsTransientData data, Polytopia.Data.TerrainData.Type terrain, SpriteAtlasManager atlasManager)
+		{
+			TribeData.Type tribe = data.tileClimateSettings.tribe;
+			SkinType skin = data.tileClimateSettings.skin;
+			string style = EnumCache<TribeData.Type>.GetName(tribe);
+			Sprite? sprite;
+			Sprite? groundSprite = __result.groundTerrain;
+			Sprite? forestOrMountainSprite = __result.forestOrMountainTerrain;
+			if (skin != SkinType.Default)
+			{
+				style = EnumCache<SkinType>.GetName(skin);
+			}
+			if(terrain == Polytopia.Data.TerrainData.Type.Mountain || terrain == Polytopia.Data.TerrainData.Type.Forest)
+			{
+				sprite = ModLoader.GetSprite("field", style);
+				if (sprite != null)
+				{
+					groundSprite = sprite;
+				}
+				sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.TerrainData.Type>.GetName(terrain), style);
+				if (sprite != null)
+				{
+					forestOrMountainSprite = sprite;
+				}
+			}
+			else
+			{
+				sprite = ModLoader.GetSprite(EnumCache<Polytopia.Data.TerrainData.Type>.GetName(terrain), style);
+				if (sprite != null)
+				{
+					groundSprite = sprite;
+				}
+			}
+			__result.groundTerrain = groundSprite;
+			__result.forestOrMountainTerrain = forestOrMountainSprite;
 		}
 
 		[HarmonyPostfix]

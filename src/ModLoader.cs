@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -51,7 +52,13 @@ namespace PolyMod
 			}
 		}
 
-		public record Preview(); //TODO: preview structure
+		public record PreviewTile(
+			int? idx = null,
+			Polytopia.Data.TerrainData.Type terrainType = Polytopia.Data.TerrainData.Type.None,
+			ResourceData.Type resourceType = Polytopia.Data.ResourceData.Type.None,
+			UnitData.Type unitType = Polytopia.Data.UnitData.Type.None,
+			ImprovementData.Type improvementType = Polytopia.Data.ImprovementData.Type.None
+		);
 
 		private static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static readonly Stopwatch stopwatch = new();
@@ -61,6 +68,7 @@ namespace PolyMod
 		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static Dictionary<string, Mod> mods = new();
 		public static Dictionary<int, int> climateToTribeData = new();
+		public static Dictionary<string, List<PreviewTile>> tribePreviews = new();
 		public static int climateAutoidx = (int)Enum.GetValues(typeof(TribeData.Type)).Cast<TribeData.Type>().Last();
 		public static bool shouldInitializeSprites = true;
 
@@ -362,12 +370,6 @@ namespace PolyMod
 						skins.Merge(originalSkins);
 					}
 				}
-
-				if (token["preview"] != null) 
-				{
-					Preview? preview = JsonSerializer.Deserialize<Preview>(token["preview"].ToString());
-					//TODO: use preview
-				}
 			}
 
 			foreach (JToken jtoken in patch.SelectTokens("$.*.*").ToArray())
@@ -410,6 +412,29 @@ namespace PolyMod
 					}
 					Plugin.logger.LogInfo("Created mapping for " + dataType + " with id " + id + " and index " + autoidx);
 					autoidx++;
+				}
+			}
+
+			foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
+			{
+				JObject token = jtoken.Cast<JObject>();
+
+				if (token["preview"] != null)
+				{
+					var options = new JsonSerializerOptions
+					{
+						Converters =
+						{
+							new JsonStringEnumConverter()
+						}
+					};
+
+					List<PreviewTile>? preview = JsonSerializer.Deserialize<List<PreviewTile>>(token["preview"].ToString(), options); // TODO: FIX CUSTOM ENUM VALUES
+
+					if (preview != null)
+					{
+						tribePreviews[GetJTokenName(token)] = preview;
+					}
 				}
 			}
 
