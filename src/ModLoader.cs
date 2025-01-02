@@ -11,7 +11,6 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -55,9 +54,9 @@ namespace PolyMod
 		public record PreviewTile(
 			int? idx = null,
 			Polytopia.Data.TerrainData.Type terrainType = Polytopia.Data.TerrainData.Type.None,
-			ResourceData.Type resourceType = Polytopia.Data.ResourceData.Type.None,
-			UnitData.Type unitType = Polytopia.Data.UnitData.Type.None,
-			ImprovementData.Type improvementType = Polytopia.Data.ImprovementData.Type.None
+			ResourceData.Type resourceType = ResourceData.Type.None,
+			UnitData.Type unitType = UnitData.Type.None,
+			ImprovementData.Type improvementType = ImprovementData.Type.None
 		);
 
 		private static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
@@ -425,7 +424,10 @@ namespace PolyMod
 					{
 						Converters =
 						{
-							new JsonStringEnumConverter()
+							new EnumCacheJson<Polytopia.Data.TerrainData.Type>(),
+							new EnumCacheJson<ResourceData.Type>(),
+							new EnumCacheJson<UnitData.Type>(),
+							new EnumCacheJson<ImprovementData.Type>(),
 						}
 					};
 
