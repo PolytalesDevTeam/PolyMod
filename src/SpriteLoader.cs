@@ -438,12 +438,17 @@ namespace PolyMod
 			return sprite;
 		}
 
-		public static Sprite BuildSprite(byte[] data, Vector2 pivot)
+		public static Sprite BuildSprite(byte[] data, Vector2? pivot = null, float pixelsPerUnit = 256f)
 		{
 			Texture2D texture = new(1, 1);
 			texture.filterMode = FilterMode.Trilinear;
 			texture.LoadImage(data);
-			return Sprite.Create(texture, new(0, 0, texture.width, texture.height), pivot, 2112);
+			return Sprite.Create(
+				texture, 
+				new(0, 0, texture.width, texture.height), 
+				pivot ?? new(0.5f, 0.5f), 
+				pixelsPerUnit
+			);
 		}
 
 		internal static void Init()

@@ -31,7 +31,7 @@ namespace PolyMod
             button.GetComponentInChildren<TMPLocalizer>().Text = "PolyMod Discord";
             Transform iconContainer = button.transform.Find("IconContainer");
             iconContainer.GetComponentInChildren<Image>().sprite
-                = SpritesLoader.BuildSprite(Plugin.GetResource("discord_icon.png").ReadBytes(), new Vector2(.5f, .5f));
+                = SpritesLoader.BuildSprite(Plugin.GetResource("discord_icon.png").ReadBytes());
             iconContainer.localScale = new Vector3(0.55f, 0.6f, 0);
             iconContainer.position -= new Vector3(0, 4, 0);
 
