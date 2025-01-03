@@ -20,21 +20,24 @@ namespace PolyMod
 		[HarmonyPatch(typeof(Unit), nameof(Unit.SetVisible))]
 		private static void Unit_SetVisible(Unit __instance)
 		{
-			try
+			string style = EnumCache<TribeData.Type>.GetName(__instance.Owner.tribe);
+			if (__instance.Owner.skinType != SkinType.Default)
 			{
-				string style = EnumCache<TribeData.Type>.GetName(__instance.Owner.tribe);
-				if (__instance.Owner.skinType != SkinType.Default)
-				{
-					style = EnumCache<SkinType>.GetName(__instance.Owner.skinType);
-				}
-				Sprite? sprite = ModLoader.GetSprite("head", style);
+				style = EnumCache<SkinType>.GetName(__instance.Owner.skinType);
+			}
+			foreach (SkinVisualsReference.VisualPart visualPart in __instance.skinVisuals.visualParts)
+			{
+				Sprite? sprite = ModLoader.GetSprite(visualPart.DefaultSpriteName, style);
 				if (sprite != null)
 				{
-					__instance.transform.FindChild("SpriteContainer/Head")
-								.GetComponent<SpriteRenderer>().sprite = sprite;
+					visualPart.renderer.spriteRenderer.sprite = sprite;
+				}
+				Sprite? outlineSprite = ModLoader.GetSprite(visualPart.DefaultSpriteName + "_outline", style);
+				if (outlineSprite != null)
+				{
+					visualPart.outlineRenderer.spriteRenderer.sprite = outlineSprite;
 				}
 			}
-			catch { }
 		}
 
 		[HarmonyPostfix]
@@ -165,7 +168,7 @@ namespace PolyMod
 					RectMask2D mask = __instance.gameObject.GetComponent<UnityEngine.UI.RectMask2D>();
 					UnityEngine.GameObject.Destroy(mask);
 					__instance.gameObject.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
-					__instance.gameObject.transform.position -= new Vector3(-5f, 35f, 0f);
+					__instance.gameObject.transform.position -= new Vector3(-5f, 40f, 0f);
 					firstTimeOpeningPreview = false;
 				}
 				foreach (UITile tile in __instance.tiles)
