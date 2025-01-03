@@ -53,7 +53,8 @@ namespace PolyMod
 		}
 
 		public record PreviewTile(
-			int? idx = null,
+			int? x = null,
+			int? y = null,
 			Polytopia.Data.TerrainData.Type terrainType = Polytopia.Data.TerrainData.Type.None,
 			ResourceData.Type resourceType = ResourceData.Type.None,
 			UnitData.Type unitType = UnitData.Type.None,
@@ -64,8 +65,6 @@ namespace PolyMod
 		private static readonly Stopwatch stopwatch = new();
 		public static Dictionary<string, Sprite> sprites = new();
 		public static Dictionary<string, AudioSource> audioClips = new();
-		public static Dictionary<string, int> gldDictionary = new();
-		public static Dictionary<int, string> gldDictionaryInversed = new();
 		public static Dictionary<string, Mod> mods = new();
 		public static Dictionary<int, int> climateToTribeData = new();
 		public static Dictionary<string, List<PreviewTile>> tribePreviews = new();
@@ -332,7 +331,6 @@ namespace PolyMod
 				}
 			}
 
-			gldDictionaryInversed = gldDictionary.ToDictionary((i) => i.Value, (i) => i.Key);
 			shouldInitializeSprites = false;
 			stopwatch.Stop();
 			Plugin.logger.LogInfo($"Loaded all mods in {stopwatch.ElapsedMilliseconds}ms");
@@ -357,7 +355,6 @@ namespace PolyMod
 						{
 							EnumCache<SkinType>.AddMapping(skinValue, (SkinType)autoidx);
 							skinsToReplace[skinValue] = autoidx;
-							gldDictionary[skinValue] = autoidx;
 							Plugin.logger.LogInfo("Created mapping for skinType with id " + skinValue + " and index " + autoidx);
 							autoidx++;
 						}
@@ -389,7 +386,6 @@ namespace PolyMod
 					string id = GetJTokenName(token);
 					string dataType = GetJTokenName(token, 2);
 					token["idx"] = autoidx;
-					gldDictionary[id] = autoidx;
 					switch (dataType)
 					{
 						case "tribeData":
@@ -422,8 +418,7 @@ namespace PolyMod
 					autoidx++;
 				}
 			}
-
-			foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray())
+			foreach (JToken jtoken in patch.SelectTokens("$.tribeData.*").ToArray()) // TODO: FIX CUSTOM ENUM VALUES
 			{
 				JObject token = jtoken.Cast<JObject>();
 
@@ -440,7 +435,7 @@ namespace PolyMod
 						}
 					};
 
-					List<PreviewTile>? preview = JsonSerializer.Deserialize<List<PreviewTile>>(token["preview"].ToString(), options); // TODO: FIX CUSTOM ENUM VALUES
+					List<PreviewTile>? preview = JsonSerializer.Deserialize<List<PreviewTile>>(token["preview"].ToString(), options);
 
 					if (preview != null)
 					{
@@ -448,7 +443,6 @@ namespace PolyMod
 					}
 				}
 			}
-
 			gld.Merge(patch, new() { MergeArrayHandling = MergeArrayHandling.Replace, MergeNullValueHandling = MergeNullValueHandling.Merge });
 		}
 

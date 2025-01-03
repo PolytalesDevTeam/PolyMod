@@ -9,6 +9,8 @@ namespace PolyMod
 {
 	public class SpritesLoader
 	{
+		private static bool firstTimeOpeningPreview = true;
+
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(TechItem), nameof(TechItem.SetupComplete))]
 		private static void TechItem_SetupComplete()
@@ -129,106 +131,55 @@ namespace PolyMod
 		}
 
 		[HarmonyPostfix]
+		[HarmonyPatch(typeof(UIWorldPreviewData), nameof(UIWorldPreviewData.TryGetData))]
+		private static void UIWorldPreviewData_TryGetData(ref bool __result, UIWorldPreviewData __instance, Vector2Int position, TribeData.Type tribeType, ref UITileData uiTile)
+		{
+			if (uiTile == null)
+			{
+				uiTile = new UITileData();
+				uiTile.Position = position;
+				uiTile.terrainType = Polytopia.Data.TerrainData.Type.Ocean;
+				uiTile.resourceType = Polytopia.Data.ResourceData.Type.None;
+				uiTile.improvementType = Polytopia.Data.ImprovementData.Type.None;
+				uiTile.unitType = Polytopia.Data.UnitData.Type.None;
+				uiTile.tileEffects = new Il2CppSystem.Collections.Generic.List<TileData.EffectType>();
+			}
+			List<PolyMod.ModLoader.PreviewTile>? preview = null;
+			if(ModLoader.tribePreviews.ContainsKey(EnumCache<TribeData.Type>.GetName(tribeType).ToLower()))
+			{
+				preview = ModLoader.tribePreviews[EnumCache<TribeData.Type>.GetName(tribeType).ToLower()];
+			}
+			if(preview != null)
+			{
+				ModLoader.PreviewTile? previewTile = preview.FirstOrDefault(tileInPreview => tileInPreview.x == position.x && tileInPreview.y == position.y);
+				if(previewTile != null)
+				{
+					uiTile.terrainType = previewTile.terrainType;
+					uiTile.resourceType = previewTile.resourceType;
+					uiTile.improvementType = previewTile.improvementType;
+					uiTile.unitType = previewTile.unitType;
+				}
+			}
+		}
+
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(UIWorldPreview), nameof(UIWorldPreview.SetPreview), new Type[] { })]
-		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance) // TODO
+		private static void UIWorldPreview_SetPreview(UIWorldPreview __instance)
 		{
 			if(Plugin.config.debug)
 			{
-				RectMask2D mask = __instance.gameObject.GetComponent<UnityEngine.UI.RectMask2D>();
-				UnityEngine.GameObject.Destroy(mask);
-				__instance.gameObject.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
-				__instance.gameObject.transform.position -= new Vector3(-5f, 35f, 0f);
-			}
-
-			string style = EnumCache<TribeData.Type>.GetName(__instance.tribeData.type);
-			if (__instance.skinType != SkinType.Default)
-			{
-				style = EnumCache<SkinType>.GetName(__instance.skinType);
-			}
-
-			List<PolyMod.ModLoader.PreviewTile>? preview = null;
-			if(ModLoader.tribePreviews.ContainsKey(style))
-			{
-				preview = ModLoader.tribePreviews[style];
-			}
-			List<UITile> tiles = __instance.tiles.ToArray().ToList();
-			List<UITile> sortedTiles = tiles
-				.OrderBy(tile => tile.Position.y)
-				.ThenBy(tile => tile.Position.x)
-				.ToList();
-
-			int i = 0;
-			foreach (UITile tile in sortedTiles)
-			{
-				if(Plugin.config.debug)
+				if(firstTimeOpeningPreview)
 				{
-					tile.DebugText.text = i.ToString();
+					RectMask2D mask = __instance.gameObject.GetComponent<UnityEngine.UI.RectMask2D>();
+					UnityEngine.GameObject.Destroy(mask);
+					__instance.gameObject.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
+					__instance.gameObject.transform.position -= new Vector3(-5f, 35f, 0f);
+					firstTimeOpeningPreview = false;
+				}
+				foreach (UITile tile in __instance.tiles)
+				{
 					tile.DebugText.gameObject.SetActive(true);
 				}
-				if(preview != null && preview.Count - 1 >= i)
-				{
-					ModLoader.PreviewTile? previewTile = preview.FirstOrDefault(tile => tile.idx == i); //TODO: FIX IDX
-					if(previewTile != null)
-					{
-						tile.Tile.gameObject.SetActive(false);
-						tile.Mountain.gameObject.SetActive(false);
-						tile.Forest.gameObject.SetActive(false);
-						tile.Resource.gameObject.SetActive(false);
-						tile.Animal.gameObject.SetActive(false);
-						tile.Improvement.gameObject.SetActive(false);
-
-
-						SkinVisualsTransientData data = new SkinVisualsTransientData();
-						data.tileClimateSettings = new TribeAndSkin(__instance.tribeData.type, __instance.skinType);
-						UIUtils.SkinnedTerrainSprites skinnedTerrainSprites = UIUtils.GetTerrainSprite(data, previewTile.terrainType, GameManager.GetSpriteAtlasManager());
-						if(skinnedTerrainSprites.groundTerrain != null)
-						{
-							tile.Tile.sprite = skinnedTerrainSprites.groundTerrain;
-						}
-						if(skinnedTerrainSprites.forestOrMountainTerrain != null)
-						{
-							tile.Mountain.sprite = skinnedTerrainSprites.forestOrMountainTerrain;
-							tile.Forest.sprite = skinnedTerrainSprites.forestOrMountainTerrain;
-						}
-						switch(previewTile.terrainType)
-						{
-							case Polytopia.Data.TerrainData.Type.None:
-								break;
-							case Polytopia.Data.TerrainData.Type.Mountain:
-								tile.Tile.gameObject.SetActive(true);
-								tile.Mountain.gameObject.SetActive(true);
-								break;
-							case Polytopia.Data.TerrainData.Type.Forest:
-								tile.Tile.gameObject.SetActive(true);
-								tile.Forest.gameObject.SetActive(true);
-								break;
-							default:
-								tile.Tile.gameObject.SetActive(true);
-								break;
-						}
-						Sprite? resourceSprite = UIUtils.GetResourceSprite(data, previewTile.resourceType, GameManager.GetSpriteAtlasManager());
-						if(resourceSprite != null)
-						{
-							tile.Animal.sprite = resourceSprite;
-							tile.Resource.sprite = resourceSprite;
-						}
-						switch(previewTile.resourceType)
-						{
-							case Polytopia.Data.ResourceData.Type.Game:
-								tile.Animal.gameObject.SetActive(true);
-								break;
-							default:
-								tile.Resource.gameObject.SetActive(true);
-								break;
-						}
-						if(previewTile.improvementType != Polytopia.Data.ImprovementData.Type.None)
-						{
-							tile.Improvement.sprite = UIUtils.GetImprovementSprite(previewTile.improvementType, __instance.tribeData.type, __instance.skinType, GameManager.GetSpriteAtlasManager()); // TODO: FIX
-							tile.Improvement.gameObject.SetActive(true);
-						}
-					}
-				}
-				i++;
 			}
 		}
 
