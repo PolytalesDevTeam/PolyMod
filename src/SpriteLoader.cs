@@ -134,16 +134,6 @@ namespace PolyMod
 		[HarmonyPatch(typeof(UIWorldPreviewData), nameof(UIWorldPreviewData.TryGetData))]
 		private static void UIWorldPreviewData_TryGetData(ref bool __result, UIWorldPreviewData __instance, Vector2Int position, TribeData.Type tribeType, ref UITileData uiTile)
 		{
-			if (uiTile == null)
-			{
-				uiTile = new UITileData();
-				uiTile.Position = position;
-				uiTile.terrainType = Polytopia.Data.TerrainData.Type.Ocean;
-				uiTile.resourceType = Polytopia.Data.ResourceData.Type.None;
-				uiTile.improvementType = Polytopia.Data.ImprovementData.Type.None;
-				uiTile.unitType = Polytopia.Data.UnitData.Type.None;
-				uiTile.tileEffects = new Il2CppSystem.Collections.Generic.List<TileData.EffectType>();
-			}
 			List<PolyMod.ModLoader.PreviewTile>? preview = null;
 			if(ModLoader.tribePreviews.ContainsKey(EnumCache<TribeData.Type>.GetName(tribeType).ToLower()))
 			{
@@ -154,10 +144,13 @@ namespace PolyMod
 				ModLoader.PreviewTile? previewTile = preview.FirstOrDefault(tileInPreview => tileInPreview.x == position.x && tileInPreview.y == position.y);
 				if(previewTile != null)
 				{
+					uiTile = new UITileData();
+					uiTile.Position = position;
 					uiTile.terrainType = previewTile.terrainType;
 					uiTile.resourceType = previewTile.resourceType;
-					uiTile.improvementType = previewTile.improvementType;
 					uiTile.unitType = previewTile.unitType;
+					uiTile.improvementType = previewTile.improvementType;
+					uiTile.tileEffects = new Il2CppSystem.Collections.Generic.List<TileData.EffectType>();
 				}
 			}
 		}

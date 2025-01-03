@@ -55,7 +55,7 @@ namespace PolyMod
 		public record PreviewTile(
 			int? x = null,
 			int? y = null,
-			Polytopia.Data.TerrainData.Type terrainType = Polytopia.Data.TerrainData.Type.None,
+			Polytopia.Data.TerrainData.Type terrainType = Polytopia.Data.TerrainData.Type.Ocean,
 			ResourceData.Type resourceType = ResourceData.Type.None,
 			UnitData.Type unitType = UnitData.Type.None,
 			ImprovementData.Type improvementType = ImprovementData.Type.None
