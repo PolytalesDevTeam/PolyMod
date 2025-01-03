@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using PolyMod.Json;
 using Polytopia.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text.Json;
@@ -61,8 +62,8 @@ namespace PolyMod
 			ImprovementData.Type improvementType = ImprovementData.Type.None
 		);
 
-		private static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		private static readonly Stopwatch stopwatch = new();
+		public static int autoidx = Plugin.AUTOIDX_STARTS_FROM;
 		public static Dictionary<string, Sprite> sprites = new();
 		public static Dictionary<string, AudioSource> audioClips = new();
 		public static Dictionary<string, Mod> mods = new();
@@ -397,18 +398,48 @@ namespace PolyMod
 							break;
 						case "unitData":
 							EnumCache<UnitData.Type>.AddMapping(id, (UnitData.Type)autoidx);
-							PrefabManager.units.TryAdd((int)(UnitData.Type)autoidx, PrefabManager.units[(int)UnitData.Type.Scout]);
+							UnitData.Type unitPrefabType = UnitData.Type.Scout;
+							if(token["prefab"] != null)
+							{
+								TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+								string prefabId = textInfo.ToTitleCase(token["prefab"].ToString());
+								if(Enum.TryParse(prefabId, out UnitData.Type parsedType))
+								{
+									unitPrefabType = parsedType;
+								}
+							}
+							PrefabManager.units.TryAdd((int)(UnitData.Type)autoidx, PrefabManager.units[(int)unitPrefabType]);
 							break;
 						case "improvementData":
 							EnumCache<ImprovementData.Type>.AddMapping(id, (ImprovementData.Type)autoidx);
-							PrefabManager.improvements.TryAdd((ImprovementData.Type)autoidx, PrefabManager.improvements[ImprovementData.Type.CustomsHouse]);
+							ImprovementData.Type improvementPrefabType = ImprovementData.Type.CustomsHouse;
+							if(token["prefab"] != null)
+							{
+								TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+								string prefabId = textInfo.ToTitleCase(token["prefab"].ToString());
+								if(Enum.TryParse(prefabId, out ImprovementData.Type parsedType))
+								{
+									improvementPrefabType = parsedType;
+								}
+							}
+							PrefabManager.improvements.TryAdd((ImprovementData.Type)autoidx, PrefabManager.improvements[improvementPrefabType]);
 							break;
 						case "terrainData":
 							EnumCache<Polytopia.Data.TerrainData.Type>.AddMapping(id, (Polytopia.Data.TerrainData.Type)autoidx);
 							break;
 						case "resourceData":
 							EnumCache<ResourceData.Type>.AddMapping(id, (ResourceData.Type)autoidx);
-							PrefabManager.resources.TryAdd((ResourceData.Type)autoidx, PrefabManager.resources[ResourceData.Type.Game]);
+							ResourceData.Type resourcePrefabType = ResourceData.Type.Game;
+							if(token["prefab"] != null)
+							{
+								TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+								string prefabId = textInfo.ToTitleCase(token["prefab"].ToString());
+								if(Enum.TryParse(prefabId, out ResourceData.Type parsedType))
+								{
+									resourcePrefabType = parsedType;
+								}
+							}
+							PrefabManager.resources.TryAdd((ResourceData.Type)autoidx, PrefabManager.resources[resourcePrefabType]);
 							break;
 						case "taskData":
 							EnumCache<TaskData.Type>.AddMapping(id, (TaskData.Type)autoidx);
